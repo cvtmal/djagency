@@ -3,6 +3,14 @@ import { BookingRequests } from '@/components/booking/booking-requests';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ToastProvider } from '@/components/ui/toast';
+import { usePage } from '@inertiajs/react';
+import { BookingRequestTableItem } from '@/components/booking/types';
+
+interface PageProps {
+  bookingRequests: BookingRequestTableItem[];
+  [key: string]: any;
+}
 
 export default function BookingRequestsPage() {
   // Define breadcrumbs for the layout
@@ -11,10 +19,15 @@ export default function BookingRequestsPage() {
     { href: '/booking', title: 'Booking' },
     { href: '/booking/requests', title: 'Booking Requests' }
   ];
+  
+  // Get the booking requests from props with proper typing
+  const { bookingRequests = [] } = usePage<{props: PageProps}>().props;
+  const typedBookingRequests = bookingRequests as BookingRequestTableItem[];
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <div className="flex flex-col space-y-6">
+      <ToastProvider>
+        <div className="flex flex-col space-y-6">
         <Heading title="Booking Requests" />
         
         <Card>
@@ -25,10 +38,11 @@ export default function BookingRequestsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <BookingRequests />
+            <BookingRequests bookingRequests={typedBookingRequests} />
           </CardContent>
         </Card>
       </div>
+      </ToastProvider>
     </AppLayout>
   );
 }

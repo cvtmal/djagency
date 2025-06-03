@@ -1,6 +1,6 @@
 // Booking related types
 
-export type BookingStatus = 'free' | 'quoted' | 'booked' | 'blocked';
+export type BookingStatus = 'new' | 'quoted' | 'booked' | 'cancelled';
 
 export interface DJ {
   id: number;
@@ -10,17 +10,41 @@ export interface DJ {
 export interface BookingDate {
   id: number;
   date: string;
-  displayDate: string;
-  dayName: string;
+  display_date: string;
+  day_name: string;
+  // Keep the camelCase versions for compatibility with existing code
+  displayDate?: string;
+  dayName?: string;
 }
 
 export interface BookingRequest {
-  clientName: string;
+  id: number;
+  dj_id: number | null;
+  booking_date_id: number | null;
+  client_name: string;
+  contact_street: string;
+  contact_city: string;
+  contact_postal_code: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_option: string;
   venue: string;
+  event_type: string;
   genres: string[];
-  startTime: string;
-  endTime: string;
-  notes: string;
+  /** @deprecated Use date field instead */
+  start_time?: string;
+  /** @deprecated Use date field instead */
+  end_time?: string;
+  /** The new date field that replaces start_time and end_time */
+  date: string;
+  time_range: string;
+  guest_count: number;
+  equipment: string;
+  music_ratings: Record<string, number>;
+  additional_music: string | null;
+  notes: string | null;
+  status: BookingStatus;
+  request_number: string;
 }
 
 export interface CellData {
@@ -32,11 +56,38 @@ export interface CellData {
 
 export interface BookingRequestTableItem {
   id: number;
-  requestNumber: string;
+  request_number: string;
+  client_name: string;
+  venue: string;
+  event_type: string;
+  /** @deprecated Use date field instead */
+  start_time?: string;
+  /** @deprecated Use date field instead */
+  end_time?: string;
+  /** The new date field that replaces start_time and end_time */
   date: string;
-  clientName: string;
+  time_range: string;
+  guest_count: number;
   status: string;
-  djsQuoted: string[];
-  lastAction: string;
-  lastActionDate: string;
+  dj_name?: string;
+  // Contact information
+  contact_street: string;
+  contact_city: string;
+  contact_postal_code: string;
+  contact_email: string;
+  contact_phone: string;
+  contact_option: string;
+  // Event details
+  equipment: string;
+  genres?: string[];
+  music_ratings?: Record<string, number>;
+  additional_music?: string | null;
+  notes?: string | null;
+  // Relations
+  dj_id?: number | null;
+  booking_date_id?: number | null;
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string | null;
 }

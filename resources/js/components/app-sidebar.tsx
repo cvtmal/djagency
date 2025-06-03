@@ -28,6 +28,11 @@ const mainNavItems: NavItem[] = [
         href: '/booking/djs',
         icon: Users,
     },
+    {
+        title: 'Settings',
+        href: '/booking/settings',
+        icon: Settings,
+    },
 ];
 
 const footerNavItems: NavItem[] = [

@@ -1,11 +1,20 @@
 <?php
 
+use App\Http\Controllers\BookingContactController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingRequestController;
+use App\Http\Controllers\DjManagementController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
+
+Route::controller(BookingContactController::class)->group(function () {
+    Route::get('contact', 'create')->name('contact');
+    Route::post('contact', 'store')->name('contact.store');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
@@ -17,21 +26,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('booking');
     })->name('booking');
     
-    Route::get('booking/availability', function () {
-        return Inertia::render('booking/availability');
-    })->name('booking.availability');
+    Route::get('booking/availability', BookingController::class)->name('booking.availability');
     
+    // Booking Requests
+    Route::controller(BookingRequestController::class)->prefix('booking-requests')->name('booking-requests.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::put('/{bookingRequest}', 'update')->name('update');
+        Route::delete('/{bookingRequest}', 'destroy')->name('destroy');
+    });
+    
+    // Legacy route - redirect to new booking requests page
     Route::get('booking/requests', function () {
-        return Inertia::render('booking/requests');
+        return redirect()->route('booking-requests.index');
     })->name('booking.requests');
     
-    Route::get('booking/djs', function () {
-        return Inertia::render('booking');
-    })->name('booking.djs');
+    Route::controller(DjManagementController::class)->prefix('booking/djs')->name('booking.djs')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store')->name('.store');
+        Route::put('/{dj}', 'update')->name('.update');
+        Route::delete('/{dj}', 'destroy')->name('.destroy');
+    });
     
     Route::get('booking/settings', function () {
-        return Inertia::render('booking');
+        return Inertia::render('booking/settings');
     })->name('booking.settings');
+    
+    Route::get('booking/dj-calendar', function () {
+        return Inertia::render('booking/dj-calendar');
+    })->name('booking.dj-calendar');
 });
 
 require __DIR__.'/settings.php';

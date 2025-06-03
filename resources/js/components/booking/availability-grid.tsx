@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BookingStatus, DJ, BookingDate } from '@/components/booking/types';
 import { Button } from '@/components/ui/button';
@@ -7,109 +7,26 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, MapPin, Music } from 'lucide-react';
 
-// Generate mock DJs data
-const generateDJs = (count: number): DJ[] => {
-  // Base real DJ names list
-  const djNames = [
-    'DJ Marc', 'DJ Damian', 'DJ Junus', 'DJ Toni', 'DJ Mike', 'DJ Sarah', 'DJ Alex', 'DJ Chris',
-    'DJ Emma', 'DJ David', 'DJ Lisa', 'DJ Kevin', 'DJ Anna', 'DJ James', 'DJ Laura', 'DJ Tom',
-    'DJ Nina', 'DJ Rick', 'DJ Sofia', 'DJ Jack', 'DJ Lucas', 'DJ Maya', 'DJ Oscar', 'DJ Rachel',
-    'DJ Sam', 'DJ Tina', 'DJ Victor', 'DJ Wendy', 'DJ Xander', 'DJ Yara', 'DJ Zack', 'DJ Alice',
-    'DJ Bob', 'DJ Chloe', 'DJ Diego', 'DJ Eva', 'DJ Frank', 'DJ Grace', 'DJ Henry', 'DJ Ivy',
-    'DJ Jacob', 'DJ Kate', 'DJ Leo', 'DJ Mia', 'DJ Noah', 'DJ Olivia'
-  ];
-
-  // Generate systematic DJ names to reach 120 total
-  return Array.from({ length: count }, (_, i) => {
-    if (i < djNames.length) {
-      return {
-        id: i + 1,
-        name: djNames[i]
-      };
-    } else {
-      // For DJs beyond our real name list, generate names like DJ A1, DJ B1, DJ C1, etc.
-      const letterIndex = (i - djNames.length) % 26;
-      const numberIndex = Math.floor((i - djNames.length) / 26) + 1;
-      return {
-        id: i + 1,
-        name: `DJ ${String.fromCharCode(65 + letterIndex)}${numberIndex}`
-      };
-    }
-  });
-};
-
-// Generate all Friday and Saturday dates for 2025, plus December 31
-const generateAllWeekendDatesFor2025 = (): BookingDate[] => {
-  const dates: BookingDate[] = [];
-  let dateId = 1;
-  
-  // Start from January 1, 2025
-  const startDate = new Date('2025-01-01');
-  // End at December 31, 2025
-  const endDate = new Date('2025-12-31');
-  
-  // Set to the first day of the year
-  let currentDate = new Date(startDate);
-  
-  // Loop through all days in 2025
-  while (currentDate <= endDate) {
-    // Check if it's Friday (5) or Saturday (6) or December 31
-    const isDecember31 = currentDate.getMonth() === 11 && currentDate.getDate() === 31;
-    const isWeekend = currentDate.getDay() === 5 || currentDate.getDay() === 6;
-    
-    if (isWeekend || isDecember31) {
-      // Format date as dd.mm.yyyy
-      const day = currentDate.getDate().toString().padStart(2, '0');
-      const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-      const year = currentDate.getFullYear();
-      const formattedDate = `${day}.${month}.${year}`;
-      
-      // Determine day name
-      let dayName = '';
-      if (isDecember31 && !isWeekend) {
-        dayName = 'New Year\'s Eve';
-      } else {
-        dayName = currentDate.getDay() === 5 ? 'Friday' : 'Saturday';
-      }
-      
-      dates.push({
-        id: dateId++,
-        date: currentDate.toISOString().split('T')[0], // Keep ISO format for internal use
-        displayDate: formattedDate, // Add formatted date for display
-        dayName: dayName
-      });
-    }
-    
-    // Move to next day
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  
-  return dates;
-};
-
-// Random status generator
-const getRandomStatus = (): BookingStatus => {
-  const statuses: BookingStatus[] = ['free', 'quoted', 'booked', 'blocked'];
-  const randomIndex = Math.floor(Math.random() * statuses.length);
-  return statuses[randomIndex];
-};
-
-// Generate mock booking request
-const generateMockBookingRequest = (djName: string, date: string) => {
-  const venues = ['Club Elektra', 'The Basement', 'Sky Lounge', 'Ocean View', 'Downtown Beats'];
-  const clients = ['John Smith', 'Emily Johnson', 'Michael Brown', 'Sophia Davis', 'Robert Wilson'];
-  const genres = ['House', 'Techno', 'Hip-Hop', 'R&B', 'EDM', 'Disco', 'Funk', '80s', '90s'];
-
-  return {
-    clientName: clients[Math.floor(Math.random() * clients.length)],
-    venue: venues[Math.floor(Math.random() * venues.length)],
-    genres: Array.from({ length: 1 + Math.floor(Math.random() * 3) }, () =>
-      genres[Math.floor(Math.random() * genres.length)]
-    ),
-    startTime: `${18 + Math.floor(Math.random() * 6)}:00`,
-    endTime: `${22 + Math.floor(Math.random() * 4)}:00`,
-    notes: `Special event request for ${djName} on ${date}`
+// Type for booking cell data
+interface CellData {
+  dj: DJ;
+  date: BookingDate;
+  status: BookingStatus;
+  request: {
+    clientName: string;
+    venue: string;
+    genres: string[];
+    startTime: string;
+    endTime: string;
+    notes: string;
   };
+}
+
+// Interface for component props
+interface AvailabilityGridProps {
+  serverDjs: DJ[];
+  serverDates: BookingDate[];
+  serverBookings: CellData[];
 };
 
 // Status to color mapping
@@ -127,35 +44,62 @@ const statusLabels = {
   blocked: 'Blocked'
 };
 
-export function AvailabilityGrid() {
-  // Generate comprehensive mock data
-  const djs = generateDJs(120); // 120 total DJs
-  const dates = generateAllWeekendDatesFor2025(); // All Friday/Saturday dates in 2025
-
-  // Generate grid data
-  const gridData = dates.map(date => ({
-    date,
-    djStatuses: djs.map(dj => ({
-      dj,
-      status: getRandomStatus(),
-      request: generateMockBookingRequest(dj.name, date.date)
-    }))
-  }));
+export function AvailabilityGrid({ serverDjs, serverDates, serverBookings }: AvailabilityGridProps) {
 
   // State for the drawer
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [selectedCell, setSelectedCell] = useState<{
-    dj: { id: number; name: string };
-    date: { id: number; date: string; displayDate: string; dayName: string };
-    status: BookingStatus;
-    request: any;
-  } | null>(null);
+  const [selectedCell, setSelectedCell] = useState<CellData | null>(null);
 
-  // Handle cell click
-  const handleCellClick = useCallback((dj: { id: number; name: string }, date: { id: number; date: string; displayDate: string; dayName: string }, status: BookingStatus, request: any) => {
+  // Process the server data to create a lookup for fast access
+  const cellData = useMemo(() => {
+    const cellMap: { [key: string]: CellData } = {};
+
+    // Create empty cells for all combinations
+    serverDjs.forEach(dj => {
+      serverDates.forEach(date => {
+        const key = `${dj.id}-${date.id}`;
+        cellMap[key] = {
+          dj,
+          date,
+          status: 'free',
+          request: {
+            clientName: '',
+            venue: '',
+            genres: [],
+            startTime: '',
+            endTime: '',
+            notes: '',
+          },
+        };
+      });
+    });
+
+    // Add the booking data where it exists
+    serverBookings.forEach(booking => {
+      if (!booking.dj || !booking.date) {
+        return; // Skip invalid bookings
+      }
+      
+      const key = `${booking.dj.id}-${booking.date.id}`;
+      cellMap[key] = booking;
+    });
+
+    return cellMap;
+  }, [serverDjs, serverDates, serverBookings]);
+
+  // Handle cell click to open drawer
+  const handleCellClick = (dj: DJ, date: BookingDate, status: BookingStatus, request: any) => {
     setSelectedCell({ dj, date, status, request });
     setIsDrawerOpen(true);
-  }, []);
+  };
+
+  // Filter visible DJs based on search
+  const filteredDJs = serverDjs.filter(dj => 
+    '' === '' || dj.name.toLowerCase().includes(''.toLowerCase())
+  );
+
+  // Get visible dates (limited to 7 for now)
+  const visibleDates = serverDates.slice(0, 7);
 
   return (
     <div className="w-full overflow-auto">
@@ -167,7 +111,7 @@ export function AvailabilityGrid() {
               <TableRow>
                 <TableHead className="sticky left-0 z-20 bg-white border-r min-w-[100px]">
                 </TableHead>
-                {djs.map((dj) => (
+                {filteredDJs.map((dj) => (
                   <TableHead key={dj.id} className="px-2 py-1 font-medium text-center min-w-[80px] text-xs whitespace-nowrap">
                     {dj.name}
                   </TableHead>
@@ -177,27 +121,30 @@ export function AvailabilityGrid() {
 
             {/* Table Body */}
             <TableBody>
-              {gridData.map((row) => (
-                <TableRow key={row.date.id} className="hover:bg-gray-50">
+              {visibleDates.map((date) => (
+                <TableRow key={date.id} className="hover:bg-gray-50">
                   <TableCell className="sticky left-0 z-10 bg-white border-r font-medium py-1 px-2 text-xs">
-                    <span>{row.date.displayDate}</span>
+                    <span>{date.display_date || date.displayDate}</span>
+                    <div className="text-[10px] text-gray-500">{date.day_name || date.dayName}</div>
                   </TableCell>
 
-                  {row.djStatuses.map((cell) => (
-                    <TableCell
-                      key={`${row.date.id}-${cell.dj.id}`}
-                      className={`text-center cursor-pointer py-1 px-1 text-xs ${cell.status === 'free' ? 'hover:bg-gray-200' :
-                        statusColors[cell.status].split(' ')[0] + ' hover:opacity-80'
-                        }`}
-                       onClick={() => handleCellClick(cell.dj, row.date, cell.status, cell.request)}
-                    >
-                      {cell.status !== 'free' && (
-                        <Badge variant="outline" className={`text-xs py-0 px-1 ${statusColors[cell.status]}`}>
-                          {statusLabels[cell.status]}
-                        </Badge>
-                      )}
-                    </TableCell>
-                  ))}
+                  {filteredDJs.map((dj) => {
+                    const key = `${dj.id}-${date.id}`;
+                    const cell = cellData[key];
+                    return (
+                      <TableCell
+                        key={key}
+                        className={`text-center cursor-pointer py-1 px-1 text-xs ${statusColors[cell.status]}`}
+                        onClick={() => handleCellClick(dj, date, cell.status, cell.request)}
+                      >
+                        {cell.status !== 'free' && (
+                          <Badge variant="outline" className={`text-xs py-0 px-1 ${statusColors[cell.status]}`}>
+                            {statusLabels[cell.status]}
+                          </Badge>
+                        )}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableBody>
@@ -213,7 +160,7 @@ export function AvailabilityGrid() {
               <SheetHeader>
                 <SheetTitle>Booking Details</SheetTitle>
                 <SheetDescription>
-                  {selectedCell.dj.name} on {selectedCell.date.dayName}, {selectedCell.date.displayDate}
+                  {selectedCell.dj.name} on {selectedCell.date.day_name || selectedCell.date.dayName}, {selectedCell.date.display_date || selectedCell.date.displayDate}
                 </SheetDescription>
               </SheetHeader>
 
@@ -286,7 +233,7 @@ export function AvailabilityGrid() {
                       <div className="ml-2">
                         <p className="text-sm font-medium">Date</p>
                         <p className="text-sm text-gray-600">
-                          {selectedCell.date.dayName}, {selectedCell.date.displayDate}
+                          {selectedCell.date.day_name || selectedCell.date.dayName}, {selectedCell.date.display_date || selectedCell.date.displayDate}
                         </p>
                       </div>
                     </div>
