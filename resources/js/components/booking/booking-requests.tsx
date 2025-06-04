@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, ExternalLink, PlusCircle } from 'lucide-react';
+import { Edit, Trash2, ExternalLink, PlusCircle, Mail } from 'lucide-react';
 import { BookingRequestTableItem, BookingStatus } from '@/components/booking/types';
 import { ModalForm, FormField } from '@/components/ui/modal-form';
 import { useToast } from '@/components/ui/toast';
@@ -43,9 +43,12 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
   const { showToast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BookingRequestTableItem | null>(null);
+
   
   // Use the booking requests passed as props
   const requests: BookingRequestTableItem[] = Array.isArray(bookingRequests) ? bookingRequests : [];
+  
+
   
   // Form fields for editing a request
   const getRequestFormFields = (request?: BookingRequestTableItem): FormField[] => [
@@ -306,7 +309,11 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     // Redirect to the booking form page using Inertia
     router.visit(route('booking.form'));
   };
-
+  
+  const handleEmailQuote = (request: BookingRequestTableItem) => {
+    router.visit(route('booking-requests.email-quote', { bookingRequest: request.id }));
+  };
+  
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
@@ -344,6 +351,17 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                 </TableCell>
                 <TableCell className="py-1 text-right">
                   <div className="flex justify-end space-x-1">
+                    {/* Show Email Quote button only for new requests */}
+                    {request.status === 'new' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => handleEmailQuote(request)}
+                      >
+                        <Mail className="h-3 w-3" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"

@@ -11,6 +11,8 @@ export type BookingStatus =
 export interface DJ {
   id: number;
   name: string;
+  genres: string[];
+  status: string;
 }
 
 export interface BookingDate {
@@ -58,6 +60,13 @@ export interface CellData {
   date: BookingDate;
   status: BookingStatus;
   request: BookingRequest;
+}
+
+export interface EmailTemplate {
+  id: number;
+  name: string;
+  subject: string;
+  body: string;
 }
 
 export interface BookingRequestTableItem {

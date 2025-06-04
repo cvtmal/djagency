@@ -40,6 +40,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Booking Requests
     Route::controller(BookingRequestController::class)->prefix('booking-requests')->name('booking-requests.')->group(function () {
         Route::get('/', 'index')->name('index');
+        Route::get('/{bookingRequest}/email-quote', 'showEmailQuote')->name('email-quote');
+        Route::post('/{bookingRequest}/email-quote', 'sendEmailQuote')->name('send-email-quote');
         Route::put('/{bookingRequest}', 'update')->name('update');
         Route::delete('/{bookingRequest}', 'destroy')->name('destroy');
     });
