@@ -10,7 +10,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Note: The date column has already been added by a previous migration
      */
     public function up(): void

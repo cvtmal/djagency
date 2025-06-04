@@ -22,13 +22,13 @@ final readonly class UpdateDjAvailabilityAction
             if (isset($data['status'])) {
                 $availability->status = DjAvailabilityStatusEnum::from($data['status']);
             }
-            
+
             if (array_key_exists('note', $data)) {
                 $availability->note = $data['note'];
             }
-            
+
             $availability->save();
-            
+
             return $availability;
         });
     }

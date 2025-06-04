@@ -70,3 +70,44 @@ Handles the business logic for scheduling follow-ups:
 ---
 
 This mechanism helps track client engagement, ensures timely follow-ups, and provides visibility into the follow-up process for booking requests.
+
+## ProcessPendingFollowUps Job - Detailed Behavior
+
+- The `ProcessPendingFollowUps` job runs to process follow-ups.
+- It finds booking requests with status `"quoted"` that need follow-up based on specific criteria.
+- For **first-time follow-ups** (`follow_up_count === 0`), it **only schedules** the follow-up.
+- For **subsequent follow-ups**, it **handles sending** the actual follow-up emails.
+
+### Small Clarifications
+
+#### Finding Booking Requests
+
+The job identifies booking requests that meet either of the following conditions:
+
+1. **Status is "quoted"**  
+   AND  
+   `next_follow_up_at` date is **today or earlier**  
+   AND  
+   client **hasn't responded**
+
+**OR**
+
+2. **Status is "quoted"**  
+   AND  
+   **no follow-up scheduled**  
+   AND  
+   client **hasn't responded**  
+   AND  
+   the request **hasn't been updated in 3+ days**
+
+#### Automation Check
+
+- If `automated_follow_up` is **true**:
+- The system **sends the follow-up email automatically**.
+- If `automated_follow_up` is **false**:
+- It **creates a client interaction record** as a reminder, **without sending an email**.
+
+### Actions Used
+
+- `ScheduleFollowUpAction` – for scheduling follow-ups
+- `SendFollowUpEmailAction` – for sending actual follow-up emails

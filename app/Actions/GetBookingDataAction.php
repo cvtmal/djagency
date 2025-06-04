@@ -30,13 +30,13 @@ final readonly class GetBookingDataAction
             ->where('status', DjStatus::Active)
             ->orderBy('id')
             ->get();
-            
+
         $dates = BookingDate::query()->orderBy('date')->get();
-        
+
         // We're not using bookings in the refactored version
         // but keeping the structure for compatibility
         $bookings = collect([]);
-            
+
         // Get only Friday and Saturday DJ availabilities (no custom dates)
         $djAvailabilities = DjAvailability::query()
             ->whereIn('dj_id', $djs->pluck('id')->toArray())
@@ -48,15 +48,15 @@ final readonly class GetBookingDataAction
                 $matchingDate = $dates->first(function ($date) use ($availability) {
                     return $date->date->format('Y-m-d') === $availability->date->format('Y-m-d');
                 });
-                
+
                 // Check if it's Friday or Saturday
                 $dayOfWeek = $availability->date->dayOfWeek;
                 $isFridayOrSaturday = ($dayOfWeek === 5 || $dayOfWeek === 6); // 5 = Friday, 6 = Saturday
-                
-                if (!$isFridayOrSaturday) {
+
+                if (! $isFridayOrSaturday) {
                     return null;
                 }
-                
+
                 return [
                     'id' => $availability->id,
                     'dj_id' => $availability->dj_id,

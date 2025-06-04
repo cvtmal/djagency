@@ -21,33 +21,33 @@ final class DjCalendarAdminController
             ->select(['id', 'name', 'unique_identifier'])
             ->orderBy('name')
             ->get();
-            
+
         return Inertia::render('Admin/DjCalendars', [
             'djs' => $djs,
         ]);
     }
-    
+
     public function generateLink(Request $request, DJ $dj): RedirectResponse
     {
         // Generate a new unique identifier if it doesn't already exist
-        if (!$dj->unique_identifier) {
+        if (! $dj->unique_identifier) {
             $dj->unique_identifier = (string) Str::uuid();
             $dj->save();
         }
-        
+
         return back()->with('success', 'Calendar link generated successfully.');
     }
-    
+
     public function showCalendarStats(DJ $dj): Response
     {
         $year = Carbon::now()->year;
-        
+
         // Get availability stats for the current year
         $stats = [
             'total_dates' => $dj->availabilities()->whereYear('date', $year)->count(),
             'status_counts' => [],
         ];
-        
+
         // Count occurrences of each status
         foreach (DjAvailabilityStatusEnum::cases() as $status) {
             $stats['status_counts'][$status->value] = [
@@ -59,15 +59,15 @@ final class DjCalendarAdminController
                 'color' => $status->color(),
             ];
         }
-        
+
         // Count custom dates vs regular weekend dates
         $stats['custom_dates_count'] = $dj->availabilities()
             ->whereYear('date', $year)
             ->where('is_custom_date', true)
             ->count();
-            
+
         $stats['weekend_dates_count'] = $stats['total_dates'] - $stats['custom_dates_count'];
-        
+
         return Inertia::render('Admin/DjCalendarStats', [
             'dj' => $dj,
             'stats' => $stats,

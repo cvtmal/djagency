@@ -115,4 +115,5 @@ export interface BookingRequestTableItem {
     date: string;
     scheduled_at: string;
   }> | null;
+  automated_follow_up?: boolean;
 }

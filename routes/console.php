@@ -11,7 +11,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(new ProcessPendingFollowUps())->dailyAt('09:00');
+Schedule::job(new ProcessPendingFollowUps)->dailyAt('09:00');
 
 // Additional command to manually trigger follow-up processing
 Artisan::command('booking-requests:process-follow-ups', function () {

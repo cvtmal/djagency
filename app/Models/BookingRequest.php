@@ -7,17 +7,17 @@ namespace App\Models;
 use App\Casts\BookingStatusCast;
 use App\Enums\BookingStatusEnum;
 use App\Enums\ClientResponseMethodEnum;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class BookingRequest extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    
+
     /**
      * @var array<string, string|class-string>
      */
@@ -32,7 +32,7 @@ class BookingRequest extends Model
         'last_response_at' => 'datetime',
         'next_follow_up_at' => 'datetime',
     ];
-    
+
     /**
      * @return BelongsTo<DJ, BookingRequest>
      */
@@ -40,7 +40,7 @@ class BookingRequest extends Model
     {
         return $this->belongsTo(DJ::class);
     }
-    
+
     /**
      * @return BelongsTo<BookingDate, BookingRequest>
      */
@@ -48,7 +48,7 @@ class BookingRequest extends Model
     {
         return $this->belongsTo(BookingDate::class);
     }
-    
+
     /**
      * @return HasMany<ClientInteraction>
      */
@@ -56,7 +56,7 @@ class BookingRequest extends Model
     {
         return $this->hasMany(ClientInteraction::class);
     }
-    
+
     /**
      * Check if this booking request needs a follow-up
      */
@@ -66,18 +66,18 @@ class BookingRequest extends Model
         if ($this->status !== BookingStatusEnum::Quoted) {
             return false;
         }
-        
+
         // If it has a next_follow_up_at date and that date is in the past
         if ($this->next_follow_up_at !== null && $this->next_follow_up_at->isPast()) {
             return true;
         }
-        
+
         // If it doesn't have a next follow-up date but is quoted and hasn't been responded to
-        if (!$this->has_responded && $this->next_follow_up_at === null) {
+        if (! $this->has_responded && $this->next_follow_up_at === null) {
             // If it's been more than 3 days since created/updated and no response
             return $this->updated_at->diffInDays(now()) >= 3;
         }
-        
+
         return false;
     }
 }

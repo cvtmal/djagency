@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\BookingRequest;
-use Inertia\Testing\AssertableInertia as Assert;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -27,7 +26,7 @@ test('booking form can be submitted successfully', function () {
         'mundart' => 2,
         'schlager' => 1,
     ];
-    
+
     $contact = [
         'name' => 'Test User',
         'street' => 'Test Street 123',
@@ -36,7 +35,7 @@ test('booking form can be submitted successfully', function () {
         'email' => 'test@example.com',
         'phone' => '+41791234567',
     ];
-    
+
     $response = $this->post(route('contact.store'), [
         'eventType' => 'wedding',
         'date' => now()->addMonth()->format('Y-m-d'),
@@ -52,7 +51,7 @@ test('booking form can be submitted successfully', function () {
 
     $response->assertRedirect(route('contact'));
     $response->assertSessionHas('success');
-    
+
     // Verify that booking was created in the database
     $this->assertDatabaseHas('booking_requests', [
         'client_name' => 'Test User',

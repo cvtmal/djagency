@@ -38,35 +38,35 @@ final readonly class CreateBookingRequestAction
                 'request_number' => $this->generateRequestNumber(),
                 'date' => $data['date'],
             ];
-            
+
             return BookingRequest::query()->create($requestData);
         });
     }
-    
+
     /**
      * Generate a unique request number for the booking
      */
     private function generateRequestNumber(): string
     {
-        return 'REQ-' . Str::upper(Str::random(8));
+        return 'REQ-'.Str::upper(Str::random(8));
     }
-    
+
     /**
      * Extract preferred genres from the ratings (ratings > 3)
-     * 
-     * @param array<string, int> $ratings
+     *
+     * @param  array<string, int>  $ratings
      * @return array<int, string>
      */
     private function extractGenresFromRatings(array $ratings): array
     {
         $preferredGenres = [];
-        
+
         foreach ($ratings as $genre => $rating) {
             if ($rating > 3) {
                 $preferredGenres[] = $genre;
             }
         }
-        
+
         return $preferredGenres;
     }
 }

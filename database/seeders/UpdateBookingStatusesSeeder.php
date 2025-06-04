@@ -14,12 +14,12 @@ final class UpdateBookingStatusesSeeder extends Seeder
     {
         // Get all booking requests with old statuses
         $deprecatedStatuses = ['free', 'Free', 'blocked', 'Blocked'];
-        
+
         // Get records with the old statuses
         $records = DB::table('booking_requests')
             ->whereIn('status', $deprecatedStatuses)
             ->get();
-        
+
         // Update each record individually to handle constraint issues
         foreach ($records as $record) {
             DB::table('booking_requests')
@@ -28,7 +28,7 @@ final class UpdateBookingStatusesSeeder extends Seeder
                     'status' => BookingStatusEnum::New->value,
                 ]);
         }
-        
-        $this->command->info('Updated ' . $records->count() . ' booking request records with deprecated statuses.');
+
+        $this->command->info('Updated '.$records->count().' booking request records with deprecated statuses.');
     }
 }

@@ -13,16 +13,13 @@ final readonly class MarkClientResponseAction
 {
     /**
      * Record a client response to a booking request
-     * 
-     * @param BookingRequest $bookingRequest
-     * @param ClientResponseMethodEnum $responseMethod
-     * @param string|null $notes
-     * @param array<string, mixed> $metadata
+     *
+     * @param  array<string, mixed>  $metadata
      */
     public function execute(
-        BookingRequest $bookingRequest, 
-        ClientResponseMethodEnum $responseMethod, 
-        ?string $notes = null, 
+        BookingRequest $bookingRequest,
+        ClientResponseMethodEnum $responseMethod,
+        ?string $notes = null,
         array $metadata = []
     ): void {
         DB::transaction(function () use ($bookingRequest, $responseMethod, $notes, $metadata): void {
@@ -34,7 +31,7 @@ final readonly class MarkClientResponseAction
                 // Reset follow-up schedule since they've responded
                 'next_follow_up_at' => null,
             ]);
-            
+
             // Create a client interaction record
             ClientInteraction::create([
                 'booking_request_id' => $bookingRequest->id,

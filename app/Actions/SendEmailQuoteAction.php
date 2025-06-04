@@ -17,7 +17,7 @@ final readonly class SendEmailQuoteAction
     /**
      * Send an email quote for a booking request.
      *
-     * @param BookingRequest $bookingRequest The booking request to quote
+     * @param  BookingRequest  $bookingRequest  The booking request to quote
      * @param array{
      *     sender_email: string,
      *     cc_email: ?string,
@@ -32,7 +32,7 @@ final readonly class SendEmailQuoteAction
             // Update the booking request status to 'quoted'
             $bookingRequest->status = BookingStatusEnum::Quoted;
             $bookingRequest->save();
-            
+
             // Log the quote email details
             // In a real implementation, this would send an actual email
             // For now, we just log it in a way that's compatible with your system
@@ -47,12 +47,12 @@ final readonly class SendEmailQuoteAction
                 'djs' => $selectedDjs->pluck('name')->join(', '),
                 'booking_request_id' => $bookingRequest->id,
             ];
-            
+
             // Send the email using our BookingQuote mailable
             try {
                 Mail::to($bookingRequest->contact_email)
                     ->send(new BookingQuote($emailDetails));
-                
+
                 // Log successful email sending
                 Log::info('Email quote sent', $emailDetails);
             } catch (\Exception $e) {
@@ -61,7 +61,7 @@ final readonly class SendEmailQuoteAction
                     'error' => $e->getMessage(),
                     'booking_request_id' => $bookingRequest->id,
                 ]);
-                
+
                 throw $e; // Re-throw to trigger transaction rollback
             }
         });

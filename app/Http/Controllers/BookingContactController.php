@@ -7,8 +7,8 @@ namespace App\Http\Controllers;
 use App\Actions\CreateBookingRequestAction;
 use App\Http\Requests\CreateContactBookingRequest;
 use Illuminate\Http\RedirectResponse;
-use Inertia\Response;
 use Inertia\Inertia;
+use Inertia\Response;
 
 final class BookingContactController extends Controller
 {
@@ -19,7 +19,7 @@ final class BookingContactController extends Controller
     {
         return Inertia::render('BookingForm');
     }
-    
+
     /**
      * Handle the contact booking form submission
      */
@@ -27,7 +27,7 @@ final class BookingContactController extends Controller
     {
         // Execute the action with validated data
         $bookingRequest = $action->execute($request->validated());
-        
+
         // Redirect with success message
         return redirect()
             ->route('contact')

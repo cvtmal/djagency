@@ -17,11 +17,15 @@ export default function ScheduleFollowUp({ bookingRequest }: ScheduleFollowUpPro
   // Default to 3 days from now for the follow-up date
   const defaultDate = new Date();
   defaultDate.setDate(defaultDate.getDate() + 3);
-  
-  const { data, setData, post, processing, errors } = useForm({
+
+  const { data, setData, post, processing, errors } = useForm<{
+    follow_up_date: string;
+    notes: string;
+    automated_follow_up: boolean;
+  }>({
     follow_up_date: format(defaultDate, 'yyyy-MM-dd'),
     notes: '',
-    automated_follow_up: true,
+    automated_follow_up: false,
   });
 
   function onSubmit(e: FormEvent) {
@@ -32,7 +36,7 @@ export default function ScheduleFollowUp({ bookingRequest }: ScheduleFollowUpPro
   return (
     <MainLayout>
       <Head title={`Schedule Follow-Up - ${bookingRequest.client_name}`} />
-      
+
       <div className="container px-4 mx-auto py-8">
         <div className="mb-6">
           <Button

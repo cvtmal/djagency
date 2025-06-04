@@ -36,7 +36,7 @@ return new class extends Migration
                 'last_response_at',
                 'next_follow_up_at',
                 'follow_up_count',
-                'follow_up_history'
+                'follow_up_history',
             ]);
         });
     }

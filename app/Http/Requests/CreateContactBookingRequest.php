@@ -38,7 +38,7 @@ final class CreateContactBookingRequest extends FormRequest
             'contactOption' => ['required', 'string', 'in:email,whatsapp,callback'],
         ];
     }
-    
+
     /**
      * Configure the validator instance.
      */
@@ -46,24 +46,24 @@ final class CreateContactBookingRequest extends FormRequest
     {
         $validator->after(function (Validator $validator): void {
             $data = $validator->validated();
-            
+
             // Parse and validate JSON fields
             if (isset($data['musicRatings'])) {
                 $musicRatings = json_decode($data['musicRatings'], true);
-                if (!is_array($musicRatings)) {
+                if (! is_array($musicRatings)) {
                     $validator->errors()->add('musicRatings', 'Invalid music ratings format');
                 }
             }
-            
+
             if (isset($data['contact'])) {
                 $contact = json_decode($data['contact'], true);
-                if (!is_array($contact)) {
+                if (! is_array($contact)) {
                     $validator->errors()->add('contact', 'Invalid contact information format');
                 }
             }
         });
     }
-    
+
     /**
      * Get the validated data from the request.
      *
@@ -72,7 +72,7 @@ final class CreateContactBookingRequest extends FormRequest
     public function validated($key = null, $default = null): array
     {
         $validated = parent::validated($key, $default);
-        
+
         // Handle nested validation for musicRatings after JSON decoding
         if (isset($validated['musicRatings']) && is_array($validated['musicRatings'])) {
             $validator = validator($validated['musicRatings'], [
@@ -86,12 +86,12 @@ final class CreateContactBookingRequest extends FormRequest
                 'mundart' => ['required', 'integer', 'between:0,5'],
                 'schlager' => ['required', 'integer', 'between:0,5'],
             ]);
-            
+
             if ($validator->fails()) {
                 throw new \Illuminate\Validation\ValidationException($validator);
             }
         }
-        
+
         // Handle nested validation for contact after JSON decoding
         if (isset($validated['contact']) && is_array($validated['contact'])) {
             $validator = validator($validated['contact'], [
@@ -102,15 +102,15 @@ final class CreateContactBookingRequest extends FormRequest
                 'email' => ['required', 'email', 'max:255'],
                 'phone' => ['required', 'string', 'max:50'],
             ]);
-            
+
             if ($validator->fails()) {
                 throw new \Illuminate\Validation\ValidationException($validator);
             }
         }
-        
+
         return $validated;
     }
-    
+
     /**
      * Get custom attributes for validator errors.
      *

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            
+
             // Ensure each DJ has unique dates
             $table->unique(['dj_id', 'date']);
         });

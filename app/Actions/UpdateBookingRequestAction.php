@@ -13,7 +13,7 @@ final readonly class UpdateBookingRequestAction
     {
         return DB::transaction(function () use ($bookingRequest, $data): BookingRequest {
             $bookingRequest->update($data);
-            
+
             return $bookingRequest->fresh();
         });
     }

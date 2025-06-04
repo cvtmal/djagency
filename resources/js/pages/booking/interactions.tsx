@@ -1,12 +1,15 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import MainLayout from '@/layouts/main-layout';
 import { BookingRequestTableItem } from '@/components/booking/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, MessageSquare, MailIcon, PhoneIcon, UserIcon } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Label } from '@/components/ui/label';
+import { CalendarIcon, MessageSquare, MailIcon, PhoneIcon, UserIcon, PencilIcon } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 // Define ClientInteraction interface inline to avoid import dependency
 interface ClientInteraction {
@@ -28,6 +31,19 @@ interface InteractionsProps {
 }
 
 export default function Interactions({ bookingRequest, interactions, responseMethods }: InteractionsProps) {
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  
+  const { data, setData, post, processing, errors, reset } = useForm<{
+    follow_up_date: string;
+    notes: string;
+    automated_follow_up: boolean;
+  }>({
+    follow_up_date: bookingRequest.next_follow_up_at 
+      ? format(new Date(bookingRequest.next_follow_up_at), 'yyyy-MM-dd')
+      : format(new Date(new Date().setDate(new Date().getDate() + 3)), 'yyyy-MM-dd'),
+    notes: '',
+    automated_follow_up: bookingRequest.automated_follow_up || false,
+  });
   
   const getInteractionIcon = (method: string) => {
     switch (method) {
@@ -45,6 +61,16 @@ export default function Interactions({ bookingRequest, interactions, responseMet
   const pendingFollowUp = bookingRequest.next_follow_up_at 
     ? new Date(bookingRequest.next_follow_up_at) > new Date() 
     : false;
+    
+  const handleFollowUpSubmit = () => {
+    post(route('booking-requests.interactions.update-follow-up', bookingRequest.id), {
+      preserveScroll: true,
+      onSuccess: () => {
+        setIsFollowUpModalOpen(false);
+        reset();
+      }
+    });
+  };
   
   return (
     <MainLayout>
@@ -113,7 +139,16 @@ export default function Interactions({ bookingRequest, interactions, responseMet
                 )}
                 {bookingRequest.next_follow_up_at && (
                   <div>
-                    <p className="text-sm font-medium">Next Follow-up:</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Next Follow-up:</p>
+                      <button
+                        onClick={() => setIsFollowUpModalOpen(true)}
+                        className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+                        title="Edit follow-up details"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                      </button>
+                    </div>
                     <p className="flex items-center gap-1">
                       <CalendarIcon className="h-4 w-4" />
                       {new Date(bookingRequest.next_follow_up_at).toLocaleDateString()}
@@ -123,6 +158,30 @@ export default function Interactions({ bookingRequest, interactions, responseMet
                     </p>
                   </div>
                 )}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Automated Follow-ups:</p>
+                    {!bookingRequest.next_follow_up_at && (
+                      <button
+                        onClick={() => setIsFollowUpModalOpen(true)}
+                        className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100"
+                        title="Set up follow-up"
+                      >
+                        <PencilIcon className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={bookingRequest.automated_follow_up ? 'secondary' : 'outline'}>
+                      {bookingRequest.automated_follow_up ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                    <p className="text-xs text-gray-500">
+                      {bookingRequest.automated_follow_up 
+                        ? 'Emails will be sent automatically' 
+                        : 'Manual follow-up required'}
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -176,6 +235,73 @@ export default function Interactions({ bookingRequest, interactions, responseMet
           </div>
         </div>
       </div>
+      {/* Follow-up Edit Modal */}
+      <Dialog open={isFollowUpModalOpen} onOpenChange={setIsFollowUpModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{bookingRequest.next_follow_up_at ? 'Update Follow-up' : 'Schedule Follow-up'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="follow_up_date">Follow-up Date</Label>
+              <div className="flex items-center space-x-2">
+                <input
+                  id="follow_up_date"
+                  type="date"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={data.follow_up_date}
+                  onChange={(e) => setData('follow_up_date', e.target.value)}
+                  min={format(new Date(), 'yyyy-MM-dd')}
+                />
+                <CalendarIcon className="h-4 w-4 opacity-50" />
+              </div>
+              {errors.follow_up_date && (
+                <p className="text-sm font-medium text-destructive">{errors.follow_up_date}</p>
+              )}
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                placeholder="Any specific details about this follow-up..."
+                value={data.notes}
+                onChange={(e) => setData('notes', e.target.value)}
+                className="min-h-[80px]"
+              />
+              {errors.notes && (
+                <p className="text-sm font-medium text-destructive">{errors.notes}</p>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="automated_follow_up"
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                checked={Boolean(data.automated_follow_up)}
+                onChange={(e) => setData('automated_follow_up', e.target.checked)}
+              />
+              <Label htmlFor="automated_follow_up" className="font-normal cursor-pointer">
+                Send follow-up email automatically
+              </Label>
+            </div>
+            <p className="text-xs text-gray-500">
+              {data.automated_follow_up
+                ? "An email will be automatically sent on the scheduled date"
+                : "You'll receive a reminder to manually follow up on this date"}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsFollowUpModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleFollowUpSubmit} disabled={processing}>
+              {processing ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

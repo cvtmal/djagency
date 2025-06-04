@@ -30,7 +30,7 @@ class DjAvailabilityFactory extends Factory
     public function definition(): array
     {
         $isCustomDate = $this->faker->boolean(20); // 20% chance of being a custom date
-        
+
         // Generate a weekend date (Friday or Saturday) or any date if it's a custom date
         $date = $isCustomDate
             ? $this->faker->dateTimeBetween('-1 month', '+3 months')
@@ -44,23 +44,23 @@ class DjAvailabilityFactory extends Factory
             'note' => $this->faker->boolean(30) ? $this->faker->sentence() : null,
         ];
     }
-    
+
     /**
      * Generate a weekend date (Friday or Saturday)
      */
     private function getWeekendDate(): Carbon
     {
         $date = Carbon::instance($this->faker->dateTimeBetween('-1 month', '+3 months'));
-        
+
         // If not Friday (5) or Saturday (6), adjust to the next Friday
-        if (!in_array($date->dayOfWeek, [5, 6])) {
+        if (! in_array($date->dayOfWeek, [5, 6])) {
             $daysUntilFriday = (5 - $date->dayOfWeek + 7) % 7;
             $date->addDays($daysUntilFriday);
         }
-        
+
         return $date;
     }
-    
+
     /**
      * Set the availability status
      */
@@ -70,7 +70,7 @@ class DjAvailabilityFactory extends Factory
             'status' => $status,
         ]);
     }
-    
+
     /**
      * Mark as a custom date
      */
@@ -80,7 +80,7 @@ class DjAvailabilityFactory extends Factory
             'is_custom_date' => $isCustom,
         ]);
     }
-    
+
     /**
      * Set a note for this availability
      */

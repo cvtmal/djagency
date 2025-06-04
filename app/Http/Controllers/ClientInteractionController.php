@@ -9,8 +9,8 @@ use App\Actions\ScheduleFollowUpAction;
 use App\Enums\ClientResponseMethodEnum;
 use App\Http\Requests\CreateClientInteractionRequest;
 use App\Http\Requests\ScheduleFollowUpRequest;
+use App\Http\Requests\UpdateFollowUpRequest;
 use App\Models\BookingRequest;
-use App\Models\ClientInteraction;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -28,7 +28,7 @@ final class ClientInteractionController
             'responseMethods' => $this->getResponseMethodOptions(),
         ]);
     }
-    
+
     /**
      * Display the form to record a new client interaction.
      */
@@ -44,15 +44,15 @@ final class ClientInteractionController
      * Store a newly created client interaction and mark the client's response.
      */
     public function store(
-        CreateClientInteractionRequest $request, 
+        CreateClientInteractionRequest $request,
         BookingRequest $bookingRequest,
         MarkClientResponseAction $action
     ): RedirectResponse {
         $validatedData = $request->validated();
         $responseMethod = ClientResponseMethodEnum::from($validatedData['interaction_method']);
-        
+
         $action->execute(
-            $bookingRequest, 
+            $bookingRequest,
             $responseMethod,
             $validatedData['notes'] ?? null,
             $validatedData['metadata'] ?? []
@@ -62,7 +62,7 @@ final class ClientInteractionController
             ->route('booking-requests.interactions.index', $bookingRequest)
             ->with('success', 'Client interaction recorded successfully.');
     }
-    
+
     /**
      * Display the form to schedule a follow-up.
      */
@@ -72,7 +72,7 @@ final class ClientInteractionController
             'bookingRequest' => $bookingRequest,
         ]);
     }
-    
+
     /**
      * Schedule a follow-up for the booking request.
      */
@@ -83,36 +83,61 @@ final class ClientInteractionController
     ): RedirectResponse {
         $validatedData = $request->validated();
         $followUpDate = null;
-        
+
         if ($validatedData['follow_up_date']) {
             $followUpDate = \Carbon\Carbon::parse($validatedData['follow_up_date']);
         }
-        
+
         // Set automated follow-up preference (defaulting to true if not provided)
         $automatedFollowUp = $validatedData['automated_follow_up'] ?? true;
         $bookingRequest->automated_follow_up = $automatedFollowUp;
         $bookingRequest->save();
-        
+
         $action->execute($bookingRequest, $followUpDate);
-        
+
         return redirect()
             ->route('booking-requests.index')
             ->with('success', 'Follow-up scheduled successfully.');
     }
-    
+
+    /**
+     * Update the follow-up for an existing booking request.
+     */
+    public function updateFollowUp(
+        UpdateFollowUpRequest $request,
+        BookingRequest $bookingRequest,
+        ScheduleFollowUpAction $action
+    ): RedirectResponse {
+        $validatedData = $request->validated();
+        $followUpDate = $validatedData['follow_up_date'] 
+            ? \Carbon\Carbon::parse($validatedData['follow_up_date'])
+            : null;
+
+        // Update the automated follow-up preference
+        $bookingRequest->automated_follow_up = $validatedData['automated_follow_up'];
+        $bookingRequest->save();
+
+        // Update the follow-up date using the action with isUpdate=true
+        $action->execute($bookingRequest, $followUpDate, $validatedData['notes'] ?? null, true);
+
+        return redirect()
+            ->route('booking-requests.interactions.index', $bookingRequest)
+            ->with('success', 'Follow-up updated successfully.');
+    }
+
     /**
      * Get the list of response method options for the UI.
-     * 
+     *
      * @return array<string, string>
      */
     private function getResponseMethodOptions(): array
     {
         $options = [];
-        
+
         foreach (ClientResponseMethodEnum::cases() as $method) {
             $options[$method->value] = $method->label();
         }
-        
+
         return $options;
     }
 }

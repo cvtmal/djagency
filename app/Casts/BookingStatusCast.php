@@ -14,28 +14,24 @@ final class BookingStatusCast implements CastsAttributes
     /**
      * Cast the given value.
      *
-     * @param  Model  $model
-     * @param  string  $key
-     * @param  mixed  $value
      * @param  array<string, mixed>  $attributes
-     * @return BookingStatusEnum|null
      */
     public function get(Model $model, string $key, mixed $value, array $attributes): ?BookingStatusEnum
     {
         if ($value === null) {
             return null;
         }
-        
+
         // Already an enum
         if ($value instanceof BookingStatusEnum) {
             return $value;
         }
-        
+
         // Handle deprecated status values
         if (in_array($value, ['free', 'Free', 'blocked', 'Blocked'])) {
             return BookingStatusEnum::New;
         }
-        
+
         // Try to get a valid enum value
         try {
             return BookingStatusEnum::from($value);
@@ -47,29 +43,25 @@ final class BookingStatusCast implements CastsAttributes
 
     /**
      * Prepare the given value for storage.
-     * 
-     * @param  Model  $model
-     * @param  string  $key
-     * @param  mixed  $value
+     *
      * @param  array<string, mixed>  $attributes
-     * @return string|null
      */
     public function set(Model $model, string $key, mixed $value, array $attributes): ?string
     {
         if ($value === null) {
             return null;
         }
-        
+
         // If it's already an enum instance, just get the value
         if ($value instanceof BookingStatusEnum) {
             return $value->value;
         }
-        
+
         // If it's one of the deprecated values, convert to New
         if (in_array($value, ['free', 'Free', 'blocked', 'Blocked'])) {
             return BookingStatusEnum::New->value;
         }
-        
+
         // Try to cast the value to an enum
         try {
             return BookingStatusEnum::from($value)->value;

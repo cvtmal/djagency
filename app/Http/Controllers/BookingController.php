@@ -18,7 +18,7 @@ final readonly class BookingController
     public function __invoke(Request $request, GetBookingDataAction $action): Response
     {
         $bookingData = $action->execute();
-        
+
         return Inertia::render('booking/AvailabilityGrid', [
             'djs' => $bookingData['djs'],
             'dates' => $bookingData['dates'],

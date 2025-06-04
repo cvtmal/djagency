@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('equipment')->after('guest_count');
             $table->json('music_ratings')->after('genres');
             $table->text('additional_music')->nullable()->after('music_ratings');
-            
+
             // Contact Information
             $table->string('contact_street')->after('client_name');
             $table->string('contact_city')->after('contact_street');
@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('contact_email')->after('contact_postal_code');
             $table->string('contact_phone')->after('contact_email');
             $table->string('contact_option')->after('contact_phone');
-            
+
             // Make these fields nullable since they're related to DJ assignment which happens later
             $table->foreignId('dj_id')->nullable()->change();
             $table->foreignId('booking_date_id')->nullable()->change();
@@ -44,7 +44,7 @@ return new class extends Migration
             // Revert DJ and booking date fields
             $table->foreignId('dj_id')->change();
             $table->foreignId('booking_date_id')->change();
-            
+
             // Drop new fields
             $table->dropColumn([
                 'event_type',
