@@ -88,6 +88,11 @@ final class ClientInteractionController
             $followUpDate = \Carbon\Carbon::parse($validatedData['follow_up_date']);
         }
         
+        // Set automated follow-up preference (defaulting to true if not provided)
+        $automatedFollowUp = $validatedData['automated_follow_up'] ?? true;
+        $bookingRequest->automated_follow_up = $automatedFollowUp;
+        $bookingRequest->save();
+        
         $action->execute($bookingRequest, $followUpDate);
         
         return redirect()

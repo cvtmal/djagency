@@ -73,9 +73,23 @@ class ProcessPendingFollowUps implements ShouldQueue
                 continue;
             }
             
-            // Otherwise, send the follow-up email
-            Log::info("Sending follow-up #{$request->follow_up_count} for booking request {$request->id}");
-            $sendFollowUpAction->execute($request);
+            // Check if this booking request is set for automated follow-up
+            if ($request->automated_follow_up) {
+                // If automated, send the follow-up email automatically
+                Log::info("Sending automated follow-up #{$request->follow_up_count} for booking request {$request->id}");
+                $sendFollowUpAction->execute($request);
+            } else {
+                // If not automated, just log it to notify the admin dashboard
+                Log::info("Manual follow-up reminder created for booking request {$request->id}");
+                
+                // Create a client interaction record as a reminder without sending an email
+                $request->interactions()->create([
+                    'method' => 'reminder',
+                    'notes' => "Manual follow-up reminder for booking request #{$request->id}",
+                    'is_follow_up' => true,
+                    'is_client_response' => false,
+                ]);
+            }
         }
         
         Log::info('Completed processing pending follow-ups');

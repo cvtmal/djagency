@@ -21,6 +21,7 @@ export default function ScheduleFollowUp({ bookingRequest }: ScheduleFollowUpPro
   const { data, setData, post, processing, errors } = useForm({
     follow_up_date: format(defaultDate, 'yyyy-MM-dd'),
     notes: '',
+    automated_follow_up: true,
   });
 
   function onSubmit(e: FormEvent) {
@@ -95,6 +96,26 @@ export default function ScheduleFollowUp({ bookingRequest }: ScheduleFollowUpPro
                     {errors.notes && (
                       <p className="text-sm font-medium text-destructive">{errors.notes}</p>
                     )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="automated_follow_up"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        checked={Boolean(data.automated_follow_up)}
+                        onChange={(e) => setData('automated_follow_up', e.target.checked)}
+                      />
+                      <Label htmlFor="automated_follow_up" className="font-normal cursor-pointer">
+                        Send follow-up email automatically
+                      </Label>
+                    </div>
+                    <p className="text-sm text-gray-500 ml-6">
+                      {data.automated_follow_up
+                        ? "An email will be automatically sent on the scheduled date"
+                        : "You'll receive a reminder to manually follow up on this date"}
+                    </p>
                   </div>
                 </div>
                 

@@ -8,7 +8,6 @@ import { ModalForm, FormField } from '@/components/ui/modal-form';
 import { useToast } from '@/components/ui/toast';
 import { router, useForm, usePage } from '@inertiajs/react';
 
-// Status colors for the badges
 const statusColors: Record<string, string> = {
   'new': 'bg-gray-100 text-gray-600',
   'quoted': 'bg-yellow-100 text-yellow-800',
@@ -16,27 +15,35 @@ const statusColors: Record<string, string> = {
   'cancelled': 'bg-red-100 text-red-800'
 };
 
-// Follow-up indicator colors
 const followUpColors: Record<string, string> = {
   'pending': 'bg-blue-100 text-blue-800',
   'responded': 'bg-green-100 text-green-800',
   'overdue': 'bg-red-100 text-red-800'
 };
 
-// Format date string from ISO format to DD.MM.YYYY
-const formatDate = (dateString: string | undefined): string => {
+const formatDate = (dateString: string | undefined, dateOnly: boolean = false): string => {
   if (!dateString) return 'N/A';
-  
+
   try {
     const date = new Date(dateString);
     // Check if date is valid
     if (isNaN(date.getTime())) return 'Invalid Date';
+
+    // Format date components
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
     
-    return date.toLocaleDateString('de-DE', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    if (dateOnly) {
+      // Format: DD.MM.YYYY
+      return `${day}.${month}.${year}`;
+    } else {
+      // Format: DD.MM.YYYY HH:MM:SS
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const seconds = date.getSeconds().toString().padStart(2, '0');
+      return `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+    }
   } catch (e) {
     return 'Invalid Date';
   }
@@ -51,12 +58,12 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BookingRequestTableItem | null>(null);
 
-  
+
   // Use the booking requests passed as props
   const requests: BookingRequestTableItem[] = Array.isArray(bookingRequests) ? bookingRequests : [];
-  
 
-  
+
+
   // Form fields for editing a request
   const getRequestFormFields = (request?: BookingRequestTableItem): FormField[] => [
     // Basic Information
@@ -203,7 +210,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     date: string;
     time_range: string;
     guest_count: number;
-    
+
     // Contact information
     contact_email: string;
     contact_phone: string;
@@ -211,16 +218,16 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     contact_city: string;
     contact_postal_code: string;
     contact_option: string;
-    
+
     // Event details
     equipment: string;
     notes: string;
     additional_music: string;
-    
+
     // Status
     status: string;
     request_number: string;
-  }>({ 
+  }>({
     // Basic information
     client_name: '',
     venue: '',
@@ -228,7 +235,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     date: '',
     time_range: '',
     guest_count: 0,
-    
+
     // Contact information
     contact_email: '',
     contact_phone: '',
@@ -236,24 +243,24 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     contact_city: '',
     contact_postal_code: '',
     contact_option: 'email',
-    
+
     // Event details
     equipment: '',
     notes: '',
     additional_music: '',
-    
+
     // Status
     status: 'new',
     request_number: ''
   });
-  
+
   const handleEditRequest = (formData: Record<string, any>) => {
     if (!selectedRequest) return;
-    
+
     // Set form data in a type-safe way
     form.clearErrors();
     form.reset();
-    
+
     // Basic information fields
     if (formData.client_name) form.data.client_name = formData.client_name as string;
     if (formData.venue) form.data.venue = formData.venue as string;
@@ -261,7 +268,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     if (formData.date) form.data.date = formData.date as string;
     if (formData.time_range) form.data.time_range = formData.time_range as string;
     if (formData.guest_count) form.data.guest_count = Number(formData.guest_count);
-    
+
     // Contact information fields
     if (formData.contact_email) form.data.contact_email = formData.contact_email as string;
     if (formData.contact_phone) form.data.contact_phone = formData.contact_phone as string;
@@ -269,16 +276,16 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     if (formData.contact_city) form.data.contact_city = formData.contact_city as string;
     if (formData.contact_postal_code) form.data.contact_postal_code = formData.contact_postal_code as string;
     if (formData.contact_option) form.data.contact_option = formData.contact_option as string;
-    
+
     // Event detail fields
     if (formData.equipment) form.data.equipment = formData.equipment as string;
     if (formData.notes) form.data.notes = formData.notes as string;
     if (formData.additional_music) form.data.additional_music = formData.additional_music as string;
-    
+
     // Status fields
     if (formData.status) form.data.status = formData.status as string;
     if (formData.request_number) form.data.request_number = formData.request_number as string;
-    
+
     // Submit using Inertia router
     form.put(route('booking-requests.update', selectedRequest.id), {
       preserveScroll: true,
@@ -316,11 +323,11 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
     // Redirect to the booking form page using Inertia
     router.visit(route('booking.form'));
   };
-  
+
   const handleEmailQuote = (request: BookingRequestTableItem) => {
     router.visit(route('booking-requests.email-quote', { bookingRequest: request.id }));
   };
-  
+
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
@@ -341,6 +348,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
               <TableHead className="w-[100px] py-2">Event Type</TableHead>
               <TableHead className="w-[80px] py-2">Status</TableHead>
               <TableHead className="w-[100px] py-2">Follow-up</TableHead>
+              <TableHead className="w-[110px] py-2">Created At</TableHead>
               <TableHead className="w-[120px] py-2 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -370,7 +378,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                             {new Date(request.next_follow_up_at) > new Date() ? 'Pending' : 'Overdue'}
                           </Badge>
                           <span className="text-xs text-gray-500">
-                            {formatDate(request.next_follow_up_at)}
+                            {formatDate(request.next_follow_up_at, true)}
                           </span>
                         </div>
                       ) : (
@@ -381,6 +389,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                     </div>
                   )}
                 </TableCell>
+                <TableCell className="py-1">{formatDate(request.created_at)}</TableCell>
                 <TableCell className="py-1 text-right">
                   <div className="flex justify-end space-x-1">
                     {/* Show Email Quote button only for new requests */}
@@ -394,7 +403,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                         <Mail className="h-3 w-3" />
                       </Button>
                     )}
-                    
+
                     {/* Show Interactions button for quoted requests */}
                     {request.status === 'quoted' && (
                       <Button

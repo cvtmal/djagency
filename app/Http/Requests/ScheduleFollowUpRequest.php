@@ -26,6 +26,7 @@ final class ScheduleFollowUpRequest extends FormRequest
         return [
             'follow_up_date' => ['required', 'date', 'after_or_equal:today'],
             'notes' => ['nullable', 'string'],
+            'automated_follow_up' => ['boolean'],
         ];
     }
 }
