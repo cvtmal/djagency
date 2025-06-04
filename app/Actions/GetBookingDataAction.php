@@ -61,10 +61,11 @@ final readonly class GetBookingDataAction
                     'id' => $availability->id,
                     'dj_id' => $availability->dj_id,
                     'booking_date_id' => $matchingDate?->id,
-                    'date' => $availability->date->format('Y-m-d'),
+                    'date' => $availability->date->format('d.m.Y'),
                     'status' => $availability->status->value,
                     'is_custom_date' => $availability->is_custom_date,
                     'day_of_week' => $dayOfWeek,
+                    'note' => $availability->note,
                 ];
             })
             ->filter() // Remove null entries

@@ -1,7 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BookingStatus, DJ, BookingDate } from '@/components/booking/types';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Type for booking cell data
 interface CellData {
@@ -13,6 +15,15 @@ interface CellData {
     day_name: string;
   };
   status: BookingStatus;
+  availability?: {
+    id: number;
+    dj_id: number;
+    booking_date_id: number | null;
+    date: string;
+    status: string;
+    is_custom_date: boolean;
+    note?: string;
+  };
 }
 
 // Interface for component props
@@ -27,6 +38,7 @@ interface AvailabilityGridProps {
     date: string;
     status: string;
     is_custom_date: boolean;
+    note?: string;
   }[];
 }
 
@@ -54,6 +66,13 @@ export function AvailabilityGrid({
   bookings = [],
   djAvailabilities = []
 }: AvailabilityGridProps) {
+  // State for tracking which availability cell is selected and if drawer is open
+  const [selectedAvailability, setSelectedAvailability] = useState<{
+    availability: any;
+    dj: DJ;
+    date: any;
+  } | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   // Extract unique dates from DJ availabilities
   const uniqueAvailabilityDates = useMemo(() => {
     // Get unique dates from availabilities
@@ -140,6 +159,8 @@ export function AvailabilityGrid({
           // Use the DjAvailability status directly without mapping
           const status = availability.status as BookingStatus;
           cellMap[key].status = status;
+          // Store reference to the original availability data
+          cellMap[key].availability = availability;
         }
       }
     });
@@ -156,6 +177,21 @@ export function AvailabilityGrid({
     availabilityDates: uniqueAvailabilityDates,
     djAvailabilities
   });
+
+  // Handle cell click to open drawer
+  const handleCellClick = (cell: CellData) => {
+    // Find the DJ
+    const dj = djs.find(d => d.id === cell.dj.id);
+
+    if (dj && cell.availability) {
+      setSelectedAvailability({
+        availability: cell.availability,
+        dj,
+        date: cell.date
+      });
+      setIsDrawerOpen(true);
+    }
+  };
 
   return (
     <div className="w-full overflow-auto">
@@ -194,12 +230,16 @@ export function AvailabilityGrid({
                     return (
                       <TableCell
                         key={key}
-                        className={`text-center py-1 px-1 text-xs ${statusColors[status]}`}
+                        className={`text-center py-1 px-1 text-xs ${statusColors[status]} cursor-pointer hover:opacity-80 transition-opacity`}
+                        onClick={() => handleCellClick(cell)}
                       >
                         {status !== 'available' && (
                           <Badge variant="outline" className={`text-xs py-0 px-1 ${statusColors[status]}`}>
                             {statusLabels[status]}
                           </Badge>
+                        )}
+                        {status === 'available' && (
+                          <span className="text-xs text-gray-400">Available</span>
                         )}
                       </TableCell>
                     );
@@ -210,6 +250,91 @@ export function AvailabilityGrid({
           </Table>
         </div>
       </div>
+      {/* Side drawer for availability details */}
+      <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <SheetContent>
+          {selectedAvailability && (
+            <div className="space-y-6">
+              <SheetHeader>
+                <SheetTitle>DJ Availability Details</SheetTitle>
+                <SheetDescription>
+                  Details for {selectedAvailability.dj.name} on {selectedAvailability.date.display_date}
+                </SheetDescription>
+              </SheetHeader>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>DJ Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">Name:</span>
+                      <span>{selectedAvailability.dj.name}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">ID:</span>
+                      <span>{selectedAvailability.dj.id}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">Genres:</span>
+                      <span>{selectedAvailability.dj.genres.join(', ')}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">Status:</span>
+                      <span>{selectedAvailability.dj.status}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Availability Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">ID:</span>
+                      <span>{selectedAvailability.availability.id}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">Status:</span>
+                      <span>
+                        <Badge className={`${statusColors[selectedAvailability.availability.status as BookingStatus]}`}>
+                          {statusLabels[selectedAvailability.availability.status as BookingStatus]}
+                        </Badge>
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">DJ ID:</span>
+                      <span>{selectedAvailability.availability.dj_id}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">Booking Date ID:</span>
+                      <span>{selectedAvailability.availability.booking_date_id ?? 'N/A'}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">Custom Date:</span>
+                      <span>{selectedAvailability.availability.is_custom_date ? 'Yes' : 'No'}</span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="font-medium">Date:</span>
+                      <span>{selectedAvailability.availability.date}</span>
+                    </div>
+                    {selectedAvailability.availability.note && (
+                      <div className="grid grid-cols-2">
+                        <span className="font-medium">Note:</span>
+                        <span>{selectedAvailability.availability.note}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
