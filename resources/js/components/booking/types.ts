@@ -1,6 +1,12 @@
 // Booking related types
 
-export type BookingStatus = 'new' | 'quoted' | 'booked' | 'cancelled';
+// Values from DjAvailabilityStatusEnum in the backend
+export type BookingStatus = 
+  | 'available' 
+  | 'blocked' 
+  | 'pending_agency_request' 
+  | 'booked_through_agency' 
+  | 'eventually_available';
 
 export interface DJ {
   id: number;

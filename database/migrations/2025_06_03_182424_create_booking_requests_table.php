@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('start_time');
             $table->string('end_time');
             $table->text('notes')->nullable();
-            $table->string('status')->default(BookingStatusEnum::Free->value);
+            $table->string('status')->default(BookingStatusEnum::New->value);
             $table->string('request_number')->unique();
             $table->timestamps();
             $table->softDeletes();

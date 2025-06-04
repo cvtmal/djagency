@@ -34,11 +34,19 @@ interface AvailabilityGridProps extends PageProps {
     dj: DJ;
     bookingDate: BookingDate;
   }[];
+  djAvailabilities: {
+    id: number;
+    dj_id: number;
+    booking_date_id: number | null;
+    date: string;
+    status: string;
+    is_custom_date: boolean;
+  }[];
 }
 
-export default function AvailabilityGrid({ djs, dates, bookings, auth }: AvailabilityGridProps) {
+export default function AvailabilityGrid({ djs, dates, bookings, djAvailabilities, auth }: AvailabilityGridProps) {
   // Debug the data structure
-  console.log('Raw data from backend:', { djs, dates, bookings });
+  console.log('Raw data from backend:', { djs, dates, bookings, djAvailabilities });
   
   // Transform the backend data into the format expected by the AvailabilityGridComponent
   const formattedBookings = bookings.map(booking => {
@@ -87,9 +95,10 @@ export default function AvailabilityGrid({ djs, dates, bookings, auth }: Availab
             <h1 className="text-2xl font-semibold mb-6">DJ Availability Grid</h1>
             
             <AvailabilityGridComponent 
-              serverDjs={djs} 
-              serverDates={dates} 
-              serverBookings={formattedBookings} 
+              djs={djs} 
+              dates={dates} 
+              bookings={formattedBookings}
+              djAvailabilities={djAvailabilities}
             />
           </div>
         </div>

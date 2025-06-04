@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookingContactController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingRequestController;
+use App\Http\Controllers\DjAvailabilityController;
 use App\Http\Controllers\DjManagementController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -14,6 +15,14 @@ Route::get('/', function () {
 Route::controller(BookingContactController::class)->group(function () {
     Route::get('contact', 'create')->name('contact');
     Route::post('contact', 'store')->name('contact.store');
+});
+
+// Public DJ Calendar Routes - accessible via unique identifier
+Route::prefix('dj-calendar/{uniqueIdentifier}')->name('dj-calendar.')->controller(DjAvailabilityController::class)->group(function () {
+    Route::get('/', 'show')->name('show');
+    Route::post('/', 'store')->name('store');
+    Route::put('/{djAvailability}', 'update')->name('update');
+    Route::delete('/{djAvailability}', 'destroy')->name('destroy');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -45,6 +54,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', 'store')->name('.store');
         Route::put('/{dj}', 'update')->name('.update');
         Route::delete('/{dj}', 'destroy')->name('.destroy');
+    });
+    
+    // DJ Calendar Management for Admins
+    Route::prefix('admin/dj-calendars')->name('admin.dj-calendars.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DjCalendarAdminController::class, 'index'])->name('index');
+        Route::post('/{dj}/generate-link', [\App\Http\Controllers\Admin\DjCalendarAdminController::class, 'generateLink'])->name('generate-link');
+        Route::get('/{dj}/stats', [\App\Http\Controllers\Admin\DjCalendarAdminController::class, 'showCalendarStats'])->name('stats');
     });
     
     Route::get('booking/settings', function () {
