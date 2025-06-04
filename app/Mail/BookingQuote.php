@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Queue\SerializesModels;
 
 final class BookingQuote extends Mailable
@@ -26,10 +27,12 @@ final class BookingQuote extends Mailable
      */
     public function envelope(): Envelope
     {
+        $cc = $this->emailDetails['cc'] ? [new Address($this->emailDetails['cc'])] : [];
+        
         return new Envelope(
             subject: $this->emailDetails['subject'],
-            from: $this->emailDetails['from'],
-            cc: $this->emailDetails['cc'] ? [$this->emailDetails['cc']] : [],
+            from: new Address($this->emailDetails['from']),
+            cc: $cc,
         );
     }
 
@@ -38,10 +41,12 @@ final class BookingQuote extends Mailable
      */
     public function content(): Content
     {
-        // For simplicity, we'll use a raw text email
-        // In a production app, you might want to use a blade template
+        // Using raw text email with proper Content::raw method
         return new Content(
-            text: $this->emailDetails['body'],
+            text: 'emails.plain-text',
+            with: [
+                'body' => $this->emailDetails['body']
+            ],
         );
     }
 }

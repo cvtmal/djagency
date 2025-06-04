@@ -229,8 +229,8 @@ const EmailQuotePage: PageWithLayout = ({
                             <div
                               key={dj.id}
                               className={`flex items-center p-3 cursor-pointer ${selectedDjs.some(selected => selected.id === dj.id)
-                                  ? 'bg-primary/10'
-                                  : 'hover:bg-gray-50'
+                                ? 'bg-primary/10'
+                                : 'hover:bg-gray-50'
                                 }`}
                               onClick={() => handleDjToggle(dj)}
                             >
@@ -321,6 +321,7 @@ const EmailQuotePage: PageWithLayout = ({
                           id="recipient"
                           type="email"
                           value={bookingRequest.contact_email}
+                          disabled
                         />
                       </div>
                     </div>
@@ -359,7 +360,7 @@ const EmailQuotePage: PageWithLayout = ({
                         id="body"
                         value={data.body}
                         onChange={(e) => setData('body', e.target.value)}
-                        rows={12}
+                        rows={24}
                         className="font-mono"
                         required
                       />
