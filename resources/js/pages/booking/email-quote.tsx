@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Send } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import MainLayout from '@/layouts/main-layout';
+import AppLayout from '@/layouts/app-layout';
+import { BreadcrumbItem } from '@/types';
 
 type PageWithLayout = React.FC<EmailQuotePageProps> & {
   layout: (page: React.ReactNode) => React.ReactElement;
@@ -20,7 +21,7 @@ type PageWithLayout = React.FC<EmailQuotePageProps> & {
 // Helper function to format a list of DJs with their genres
 const formatDjList = (djs: DJ[]): string => {
   if (!djs.length) return 'No DJs selected';
-  
+
   return djs.map(dj => `${dj.name} (${dj.genres.join(', ')})`).join('\n');
 };
 
@@ -41,7 +42,7 @@ const EmailQuotePage: PageWithLayout = ({
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(
     emailTemplates.length > 0 ? emailTemplates[0] : null
   );
-  
+
   const { data, setData, post, processing, errors } = useForm({
     sender_email: 'agency@deindj.com',
     cc_email: '',
@@ -49,30 +50,30 @@ const EmailQuotePage: PageWithLayout = ({
     body: selectedTemplate?.body || '',
     dj_ids: [] as number[]
   });
-  
+
   // Get unique genres from all DJs
   const uniqueGenres = [...new Set(djs.flatMap(dj => dj.genres))].sort();
-  
+
   // Filter DJs based on selected genres
   useEffect(() => {
     if (selectedGenres.length === 0) {
       setFilteredDjs(djs);
     } else {
       setFilteredDjs(
-        djs.filter(dj => 
+        djs.filter(dj =>
           dj.genres.some(genre => selectedGenres.includes(genre))
         )
       );
     }
   }, [selectedGenres, djs]);
-  
+
   // Update email content when template or selected DJs change
   useEffect(() => {
     if (!selectedTemplate) return;
-    
+
     let processedSubject = selectedTemplate.subject;
     let processedBody = selectedTemplate.body;
-    
+
     // Replace placeholders with actual values
     const replacements: Record<string, string> = {
       '{client_name}': bookingRequest.client_name || '',
@@ -82,13 +83,13 @@ const EmailQuotePage: PageWithLayout = ({
       '{dj_list}': formatDjList(selectedDjs),
       '{sender_name}': 'Your Name', // This would normally come from user profile
     };
-    
+
     // Apply replacements
     Object.entries(replacements).forEach(([key, value]) => {
       processedSubject = processedSubject.replace(new RegExp(key, 'g'), value);
       processedBody = processedBody.replace(new RegExp(key, 'g'), value);
     });
-    
+
     setData({
       ...data,
       subject: processedSubject,
@@ -96,22 +97,22 @@ const EmailQuotePage: PageWithLayout = ({
       dj_ids: selectedDjs.map(dj => dj.id)
     });
   }, [selectedTemplate, selectedDjs, bookingRequest]);
-  
+
   // Handle template selection
   const handleTemplateChange = (templateId: string) => {
     const template = emailTemplates.find(t => t.id.toString() === templateId) || null;
     setSelectedTemplate(template);
   };
-  
+
   // Handle genre selection
   const handleGenreChange = (genre: string, isChecked: boolean) => {
-    setSelectedGenres(prev => 
+    setSelectedGenres(prev =>
       isChecked
         ? [...prev, genre]
         : prev.filter(g => g !== genre)
     );
   };
-  
+
   // Handle DJ selection
   const handleDjToggle = (dj: DJ) => {
     setSelectedDjs(
@@ -120,17 +121,17 @@ const EmailQuotePage: PageWithLayout = ({
         : [...selectedDjs, dj]
     );
   };
-  
+
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     post(route('booking-requests.send-email-quote', { bookingRequest: bookingRequest.id }));
   };
-  
+
   return (
     <>
       <Head title={`Email Quote - ${bookingRequest.client_name}`} />
-      
+
       <div className="py-6">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center mb-6">
@@ -182,7 +183,7 @@ const EmailQuotePage: PageWithLayout = ({
                   </div>
                 </CardContent>
               </Card>
-              
+
               {/* DJ Selection */}
               <Card>
                 <CardHeader>
@@ -200,7 +201,7 @@ const EmailQuotePage: PageWithLayout = ({
                           <Checkbox
                             id={`genre-${genre}`}
                             checked={selectedGenres.includes(genre)}
-                            onCheckedChange={(checked) => 
+                            onCheckedChange={(checked) =>
                               handleGenreChange(genre, checked === true)
                             }
                           />
@@ -214,7 +215,7 @@ const EmailQuotePage: PageWithLayout = ({
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <Label className="text-sm font-medium">DJs ({filteredDjs.length})</Label>
                     <div className="mt-2 rounded-md border h-60 overflow-auto">
@@ -227,11 +228,10 @@ const EmailQuotePage: PageWithLayout = ({
                           {filteredDjs.map(dj => (
                             <div
                               key={dj.id}
-                              className={`flex items-center p-3 cursor-pointer ${
-                                selectedDjs.some(selected => selected.id === dj.id)
+                              className={`flex items-center p-3 cursor-pointer ${selectedDjs.some(selected => selected.id === dj.id)
                                   ? 'bg-primary/10'
                                   : 'hover:bg-gray-50'
-                              }`}
+                                }`}
                               onClick={() => handleDjToggle(dj)}
                             >
                               <Checkbox
@@ -264,7 +264,7 @@ const EmailQuotePage: PageWithLayout = ({
                 </CardContent>
               </Card>
             </div>
-            
+
             {/* Right side - Email form */}
             <div className="col-span-12 md:col-span-8">
               <Card>
@@ -298,7 +298,7 @@ const EmailQuotePage: PageWithLayout = ({
                         </SelectContent>
                       </Select>
                     </div>
-                    
+
                     {/* Email header fields */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -314,18 +314,17 @@ const EmailQuotePage: PageWithLayout = ({
                           <p className="text-sm text-red-500 mt-1">{errors.sender_email}</p>
                         )}
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="recipient">To</Label>
                         <Input
                           id="recipient"
                           type="email"
                           value={bookingRequest.contact_email}
-                          disabled
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="cc_email">CC</Label>
                       <Input
@@ -339,7 +338,7 @@ const EmailQuotePage: PageWithLayout = ({
                         <p className="text-sm text-red-500 mt-1">{errors.cc_email}</p>
                       )}
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="subject">Subject</Label>
                       <Input
@@ -352,7 +351,7 @@ const EmailQuotePage: PageWithLayout = ({
                         <p className="text-sm text-red-500 mt-1">{errors.subject}</p>
                       )}
                     </div>
-                    
+
                     {/* Email body */}
                     <div>
                       <Label htmlFor="body">Message</Label>
@@ -369,11 +368,11 @@ const EmailQuotePage: PageWithLayout = ({
                       )}
                     </div>
                   </CardContent>
-                  
+
                   <CardFooter className="flex justify-between">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       onClick={() => router.visit(route('booking-requests.index'))}
                     >
                       Cancel
@@ -397,6 +396,12 @@ const EmailQuotePage: PageWithLayout = ({
   );
 };
 
-EmailQuotePage.layout = (page: React.ReactNode) => <MainLayout>{page}</MainLayout>;
+// Define breadcrumbs for this page
+const breadcrumbs: BreadcrumbItem[] = [
+  { title: 'Booking Requests', href: route('booking-requests.index') },
+  { title: 'Send Email Quote', href: '#' },
+];
+
+EmailQuotePage.layout = (page: React.ReactNode) => <AppLayout breadcrumbs={breadcrumbs}>{page}</AppLayout>;
 
 export default EmailQuotePage;
