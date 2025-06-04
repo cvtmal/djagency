@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, ExternalLink, PlusCircle, Mail } from 'lucide-react';
+import { Edit, Trash2, ExternalLink, PlusCircle, Mail, MessageSquare, Calendar } from 'lucide-react';
 import { BookingRequestTableItem, BookingStatus } from '@/components/booking/types';
 import { ModalForm, FormField } from '@/components/ui/modal-form';
 import { useToast } from '@/components/ui/toast';
@@ -14,6 +14,13 @@ const statusColors: Record<string, string> = {
   'quoted': 'bg-yellow-100 text-yellow-800',
   'booked': 'bg-green-100 text-green-800',
   'cancelled': 'bg-red-100 text-red-800'
+};
+
+// Follow-up indicator colors
+const followUpColors: Record<string, string> = {
+  'pending': 'bg-blue-100 text-blue-800',
+  'responded': 'bg-green-100 text-green-800',
+  'overdue': 'bg-red-100 text-red-800'
 };
 
 // Format date string from ISO format to DD.MM.YYYY
@@ -329,11 +336,12 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
             <TableRow>
               <TableHead className="w-[60px] py-2">ID</TableHead>
               <TableHead className="w-[90px] py-2">Date</TableHead>
-              <TableHead className="w-[140px] py-2">Client Name</TableHead>
-              <TableHead className="w-[140px] py-2">Venue</TableHead>
-              <TableHead className="w-[120px] py-2">Event Type</TableHead>
+              <TableHead className="w-[130px] py-2">Client Name</TableHead>
+              <TableHead className="w-[130px] py-2">Venue</TableHead>
+              <TableHead className="w-[100px] py-2">Event Type</TableHead>
               <TableHead className="w-[80px] py-2">Status</TableHead>
-              <TableHead className="w-[100px] py-2 text-right">Actions</TableHead>
+              <TableHead className="w-[100px] py-2">Follow-up</TableHead>
+              <TableHead className="w-[120px] py-2 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -349,6 +357,30 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                     {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                   </Badge>
                 </TableCell>
+                <TableCell className="py-1">
+                  {request.status === 'quoted' && (
+                    <div>
+                      {request.has_responded ? (
+                        <Badge className="bg-green-100 text-green-800 text-xs px-1 py-0">
+                          Responded
+                        </Badge>
+                      ) : request.next_follow_up_at ? (
+                        <div className="flex items-center space-x-1">
+                          <Badge className="bg-blue-100 text-blue-800 text-xs px-1 py-0">
+                            {new Date(request.next_follow_up_at) > new Date() ? 'Pending' : 'Overdue'}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(request.next_follow_up_at)}
+                          </span>
+                        </div>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-600 text-xs px-1 py-0">
+                          Not Scheduled
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="py-1 text-right">
                   <div className="flex justify-end space-x-1">
                     {/* Show Email Quote button only for new requests */}
@@ -360,6 +392,18 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                         onClick={() => handleEmailQuote(request)}
                       >
                         <Mail className="h-3 w-3" />
+                      </Button>
+                    )}
+                    
+                    {/* Show Interactions button for quoted requests */}
+                    {request.status === 'quoted' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => router.visit(route('booking-requests.interactions.index', request.id))}
+                      >
+                        <MessageSquare className="h-3 w-3" />
                       </Button>
                     )}
                     <Button

@@ -105,4 +105,14 @@ export interface BookingRequestTableItem {
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;
+  // Follow-up fields
+  has_responded?: boolean;
+  response_method?: string | null;
+  last_response_at?: string | null;
+  next_follow_up_at?: string | null;
+  follow_up_count?: number;
+  follow_up_history?: Array<{
+    date: string;
+    scheduled_at: string;
+  }> | null;
 }

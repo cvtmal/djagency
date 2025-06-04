@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookingContactController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingRequestController;
+use App\Http\Controllers\ClientInteractionController;
 use App\Http\Controllers\DjAvailabilityController;
 use App\Http\Controllers\DjManagementController;
 use Illuminate\Support\Facades\Route;
@@ -44,6 +45,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/{bookingRequest}/email-quote', 'sendEmailQuote')->name('send-email-quote');
         Route::put('/{bookingRequest}', 'update')->name('update');
         Route::delete('/{bookingRequest}', 'destroy')->name('destroy');
+        
+        // Client Interactions
+        Route::controller(ClientInteractionController::class)->prefix('{bookingRequest}/interactions')->name('interactions.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/schedule-follow-up', 'showScheduleFollowUp')->name('schedule-follow-up');
+            Route::post('/schedule-follow-up', 'scheduleFollowUp')->name('schedule-follow-up.store');
+        });
     });
     
     // Legacy route - redirect to new booking requests page
