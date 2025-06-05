@@ -84,7 +84,7 @@ class ProcessPendingFollowUps implements ShouldQueue
 
                 // Create a client interaction record as a reminder without sending an email
                 $request->interactions()->create([
-                    'method' => 'reminder',
+                    'interaction_method' => 'reminder',
                     'notes' => "Manual follow-up reminder for booking request #{$request->id}",
                     'is_follow_up' => true,
                     'is_client_response' => false,

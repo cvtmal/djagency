@@ -51,12 +51,20 @@ const formatDate = (dateString: string | undefined, dateOnly: boolean = false): 
 
 interface BookingRequestsProps {
   bookingRequests: BookingRequestTableItem[];
+  djs: Array<{
+    id: number;
+    name: string;
+    genres: string[];
+    status: string;
+  }>;
 }
 
-export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) {
+export function BookingRequests({ bookingRequests = [], djs = [] }: BookingRequestsProps) {
   const { showToast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDjModalOpen, setIsDjModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<BookingRequestTableItem | null>(null);
+  const [selectedDjId, setSelectedDjId] = useState<number | null>(null);
 
 
   // Use the booking requests passed as props
@@ -325,7 +333,34 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
   };
 
   const handleEmailQuote = (request: BookingRequestTableItem) => {
-    router.visit(route('booking-requests.email-quote', { bookingRequest: request.id }));
+    router.visit(route('booking-requests.email-quote', request.id));
+  };
+
+  const handleAssignDjClick = (request: BookingRequestTableItem) => {
+    setSelectedRequest(request);
+    setSelectedDjId(request.dj_id || null);
+    setIsDjModalOpen(true);
+  };
+
+  const handleAssignDj = (formData: Record<string, any>) => {
+    if (!selectedRequest || !formData.dj_id) {
+      showToast('Please select a DJ', 'error');
+      return;
+    }
+
+    const djId = parseInt(formData.dj_id, 10);
+
+    router.post(route('booking-requests.assign-dj', selectedRequest.id), {
+      dj_id: djId,
+    }, {
+      onSuccess: () => {
+        setIsDjModalOpen(false);
+        showToast('DJ assigned successfully', 'success');
+      },
+      onError: () => {
+        showToast('Failed to assign DJ', 'error');
+      },
+    });
   };
 
   return (
@@ -349,6 +384,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
               <TableHead className="w-[80px] py-2">Status</TableHead>
               <TableHead className="w-[100px] py-2">Follow-up</TableHead>
               <TableHead className="w-[110px] py-2">Created At</TableHead>
+              <TableHead className="w-[120px] py-2">Assigned DJ</TableHead>
               <TableHead className="w-[120px] py-2 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -356,7 +392,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
             {requests.map((request: BookingRequestTableItem) => (
               <TableRow key={request.id} className="hover:bg-gray-50 h-8">{/* Reduced row height */}
                 <TableCell className="font-medium py-1">{request.id}</TableCell>
-                <TableCell className="py-1">{formatDate(request.date)}</TableCell>
+                <TableCell className="py-1">{formatDate(request.date, true)}</TableCell>
                 <TableCell className="py-1">{request.client_name}</TableCell>
                 <TableCell className="py-1">{request.venue}</TableCell>
                 <TableCell className="py-1">{request.event_type}</TableCell>
@@ -389,7 +425,14 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                     </div>
                   )}
                 </TableCell>
-                <TableCell className="py-1">{formatDate(request.created_at)}</TableCell>
+                <TableCell className="py-1">{formatDate(request.created_at, true)}</TableCell>
+                <TableCell className="py-1">
+                  {request.dj_id && request.dj_name ? (
+                    <span className="text-blue-600">{request.dj_name}</span>
+                  ) : (
+                    <span className="text-gray-400">Not assigned</span>
+                  )}
+                </TableCell>
                 <TableCell className="py-1 text-right">
                   <div className="flex justify-end space-x-1">
                     {/* Show Email Quote button only for new requests */}
@@ -427,7 +470,7 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
                       variant="outline"
                       size="sm"
                       className="h-6 w-6 p-0"
-                      onClick={() => showToast('Viewing request details', 'info')}
+                      onClick={() => handleAssignDjClick(request)}
                     >
                       <ExternalLink className="h-3 w-3" />
                     </Button>
@@ -455,6 +498,32 @@ export function BookingRequests({ bookingRequests = [] }: BookingRequestsProps) 
           open={isEditModalOpen}
           onOpenChange={setIsEditModalOpen}
           onSubmit={handleEditRequest}
+        />
+      )}
+
+      {/* Assign DJ Modal */}
+      {selectedRequest && (
+        <ModalForm
+          title={`Assign DJ to Booking Request: ${selectedRequest.request_number}`}
+          fields={[
+            {
+              id: 'dj_id',
+              label: 'Select DJ',
+              type: 'select',
+              value: selectedDjId?.toString() || '',
+              options: [
+                { value: '', label: 'Select a DJ...' },
+                ...djs.map(dj => ({
+                  value: dj.id.toString(),
+                  label: dj.name + (dj.genres && dj.genres.length > 0 ? ` (${dj.genres.join(', ')})` : '')
+                }))
+              ]
+            }
+          ]}
+          open={isDjModalOpen}
+          onOpenChange={setIsDjModalOpen}
+          onSubmit={handleAssignDj}
+          submitLabel="Assign DJ"
         />
       )}
     </div>

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Console\Commands\SendWeekendBookingFeedbackRequests;
 use App\Jobs\ProcessPendingFollowUps;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -12,6 +13,9 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::job(new ProcessPendingFollowUps)->dailyAt('09:00');
+
+// Schedule DJ feedback requests to be sent every Monday morning
+Schedule::command(SendWeekendBookingFeedbackRequests::class)->weeklyOn(1, '08:00');
 
 // Additional command to manually trigger follow-up processing
 Artisan::command('booking-requests:process-follow-ups', function () {

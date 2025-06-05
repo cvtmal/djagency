@@ -49,6 +49,7 @@ class DJ extends Model
         'genres' => 'array',
         'status' => DjStatus::class,
         'unique_identifier' => 'string',
+        'email' => 'string',
     ];
 
     /**

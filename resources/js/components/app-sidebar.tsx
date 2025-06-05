@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Calendar, Folder, LayoutGrid, Settings, LogOut, Users, InboxIcon } from 'lucide-react';
+import { BookOpen, Calendar, Folder, LayoutGrid, Settings, LogOut, Users, InboxIcon, MessageSquare } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -27,6 +27,11 @@ const mainNavItems: NavItem[] = [
         title: 'DJs',
         href: '/booking/djs',
         icon: Users,
+    },
+    {
+        title: 'DJ Feedback',
+        href: '/admin/dj-feedback',
+        icon: MessageSquare,
     },
     {
         title: 'Settings',

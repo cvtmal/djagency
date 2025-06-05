@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\DjFeedbackRequestController as AdminDjFeedbackRequestController;
 use App\Http\Controllers\BookingContactController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingRequestController;
 use App\Http\Controllers\ClientInteractionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DjAvailabilityController;
+use App\Http\Controllers\DjFeedbackController;
 use App\Http\Controllers\DjManagementController;
 use App\Http\Controllers\EmailTemplateController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +30,13 @@ Route::prefix('dj-calendar/{uniqueIdentifier}')->name('dj-calendar.')->controlle
     Route::delete('/{djAvailability}', 'destroy')->name('destroy');
 });
 
+// DJ Feedback Routes - accessible via unique token
+Route::prefix('dj-feedback')->name('dj-feedback.')->controller(DjFeedbackController::class)->group(function () {
+    Route::get('/{token}', 'show')->name('show');
+    Route::post('/{token}', 'update')->name('update');
+    Route::get('/{token}/thank-you', 'thankYou')->name('thank-you');
+});
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
@@ -43,6 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{bookingRequest}/email-quote', 'showEmailQuote')->name('email-quote');
         Route::post('/{bookingRequest}/email-quote', 'sendEmailQuote')->name('send-email-quote');
+        Route::post('/{bookingRequest}/assign-dj', 'assignDj')->name('assign-dj');
         Route::put('/{bookingRequest}', 'update')->name('update');
         Route::delete('/{bookingRequest}', 'destroy')->name('destroy');
 
@@ -74,6 +84,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DjCalendarAdminController::class, 'index'])->name('index');
         Route::post('/{dj}/generate-link', [\App\Http\Controllers\Admin\DjCalendarAdminController::class, 'generateLink'])->name('generate-link');
         Route::get('/{dj}/stats', [\App\Http\Controllers\Admin\DjCalendarAdminController::class, 'showCalendarStats'])->name('stats');
+    });
+    
+    // DJ Feedback Management for Admins
+    Route::prefix('admin/dj-feedback')->name('admin.dj-feedback.')->controller(AdminDjFeedbackRequestController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{djFeedbackRequest}', 'show')->name('show');
+        Route::post('/{djFeedbackRequest}/contact-client', 'contactClient')->name('contact-client');
     });
 
     Route::get('booking/settings', function () {

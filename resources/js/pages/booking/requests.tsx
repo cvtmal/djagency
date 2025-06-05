@@ -9,6 +9,12 @@ import { BookingRequestTableItem } from '@/components/booking/types';
 
 interface PageProps {
   bookingRequests: BookingRequestTableItem[];
+  djs: Array<{
+    id: number;
+    name: string;
+    genres: string[];
+    status: string;
+  }>;
   [key: string]: any;
 }
 
@@ -20,9 +26,10 @@ export default function BookingRequestsPage() {
     { href: '/booking/requests', title: 'Booking Requests' }
   ];
   
-  // Get the booking requests from props with proper typing
-  const { bookingRequests = [] } = usePage<{props: PageProps}>().props;
+  // Get the booking requests and DJs from props with proper typing
+  const { bookingRequests = [], djs = [] } = usePage<{props: PageProps}>().props;
   const typedBookingRequests = bookingRequests as BookingRequestTableItem[];
+  const typedDjs = djs as PageProps['djs'];
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
@@ -38,7 +45,7 @@ export default function BookingRequestsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <BookingRequests bookingRequests={typedBookingRequests} />
+            <BookingRequests bookingRequests={typedBookingRequests} djs={typedDjs} />
           </CardContent>
         </Card>
       </div>

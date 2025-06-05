@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\AssignDjToBookingRequestAction;
 use App\Actions\DeleteBookingRequestAction;
 use App\Actions\SendEmailQuoteAction;
 use App\Actions\UpdateBookingRequestAction;
+use App\Http\Requests\AssignDjToBookingRequestRequest;
 use App\Http\Requests\SendEmailQuoteRequest;
 use App\Http\Requests\UpdateBookingRequestRequest;
 use App\Models\BookingRequest;
@@ -22,8 +24,15 @@ final class BookingRequestController
     {
         return Inertia::render('booking/requests', [
             'bookingRequests' => BookingRequest::query()
+                ->with('dj:id,name')
                 ->orderBy('created_at', 'desc')
-                ->get(),
+                ->get()
+                ->map(function ($request) {
+                    return array_merge($request->toArray(), [
+                        'dj_name' => $request->dj ? $request->dj->name : null,
+                    ]);
+                }),
+            'djs' => DJ::all(),
         ]);
     }
 
@@ -63,5 +72,15 @@ final class BookingRequestController
         $action->execute($bookingRequest, $request->validated());
 
         return redirect()->route('booking-requests.index')->with('success', 'Email quote sent successfully.');
+    }
+
+    public function assignDj(
+        AssignDjToBookingRequestRequest $request,
+        BookingRequest $bookingRequest,
+        AssignDjToBookingRequestAction $action
+    ): RedirectResponse {
+        $action->execute($bookingRequest, $request->validated()['dj_id']);
+
+        return redirect()->route('booking-requests.index')->with('success', 'DJ assigned to booking request successfully.');
     }
 }
