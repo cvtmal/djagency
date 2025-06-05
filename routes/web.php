@@ -4,6 +4,7 @@ use App\Http\Controllers\BookingContactController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingRequestController;
 use App\Http\Controllers\ClientInteractionController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DjAvailabilityController;
 use App\Http\Controllers\DjManagementController;
 use App\Http\Controllers\EmailTemplateController;
@@ -28,9 +29,7 @@ Route::prefix('dj-calendar/{uniqueIdentifier}')->name('dj-calendar.')->controlle
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     // DJ Booking Tool Routes
     Route::get('booking', function () {
