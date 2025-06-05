@@ -6,6 +6,7 @@ use App\Http\Controllers\BookingRequestController;
 use App\Http\Controllers\ClientInteractionController;
 use App\Http\Controllers\DjAvailabilityController;
 use App\Http\Controllers\DjManagementController;
+use App\Http\Controllers\EmailTemplateController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -77,8 +78,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::get('booking/settings', function () {
-        return Inertia::render('booking/settings');
+        return Inertia::render('booking/settings', [
+            'emailTemplates' => \App\Models\EmailTemplate::query()->orderBy('id')->get(),
+        ]);
     })->name('booking.settings');
+    
+    // Email Templates
+    Route::controller(EmailTemplateController::class)->prefix('booking/email-templates')->name('booking.email-templates.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('/{emailTemplate}', 'update')->name('update');
+        Route::delete('/{emailTemplate}', 'destroy')->name('destroy');
+    });
 
     Route::get('booking/dj-calendar', function () {
         return Inertia::render('booking/dj-calendar');

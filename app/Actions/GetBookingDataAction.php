@@ -25,7 +25,6 @@ final readonly class GetBookingDataAction
      */
     public function execute(): array
     {
-        // Only get active DJs
         $djs = DJ::query()
             ->where('status', DjStatus::Active)
             ->orderBy('id')

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, Send, Check, Minus } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
@@ -22,7 +22,7 @@ type PageWithLayout = React.FC<EmailQuotePageProps> & {
 const formatDjList = (djs: DJ[]): string => {
   if (!djs.length) return 'No DJs selected';
 
-  return djs.map(dj => `${dj.name} (${dj.genres.join(', ')})`).join('\n');
+  return djs.map(dj => `- ${dj.name} (${dj.genres.join(', ')})`).join('\n');
 };
 
 interface EmailQuotePageProps {
@@ -37,14 +37,15 @@ const EmailQuotePage: PageWithLayout = ({
   emailTemplates
 }) => {
   const [selectedDjs, setSelectedDjs] = useState<DJ[]>([]);
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
+    // Genre filter state: Map<genre, filterState> where filterState is: 0 = unfiltered, 1 = include, 2 = exclude
+  const [genreFilters, setGenreFilters] = useState<Map<string, number>>(new Map());
   const [filteredDjs, setFilteredDjs] = useState<DJ[]>(djs);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(
     emailTemplates.length > 0 ? emailTemplates[0] : null
   );
 
   const { data, setData, post, processing, errors } = useForm({
-    sender_email: 'agency@deindj.com',
+    sender_email: 'hallo@deindj.ch',
     cc_email: '',
     subject: selectedTemplate?.subject || '',
     body: selectedTemplate?.body || '',
@@ -54,18 +55,35 @@ const EmailQuotePage: PageWithLayout = ({
   // Get unique genres from all DJs
   const uniqueGenres = [...new Set(djs.flatMap(dj => dj.genres))].sort();
 
-  // Filter DJs based on selected genres
+  // Filter DJs based on genre filters (include/exclude)
   useEffect(() => {
-    if (selectedGenres.length === 0) {
+    if (!genreFilters.size) {
+      // No filters active
       setFilteredDjs(djs);
     } else {
+      const includedGenres = Array.from(genreFilters.entries())
+        .filter(([_, state]) => state === 1)
+        .map(([genre]) => genre);
+
+      const excludedGenres = Array.from(genreFilters.entries())
+        .filter(([_, state]) => state === 2)
+        .map(([genre]) => genre);
+
       setFilteredDjs(
-        djs.filter(dj =>
-          dj.genres.some(genre => selectedGenres.includes(genre))
-        )
+        djs.filter(dj => {
+          // Include DJs with selected genres (if any included genres)
+          const includeCondition = includedGenres.length === 0 || 
+            dj.genres.some(genre => includedGenres.includes(genre));
+            
+          // Exclude DJs with excluded genres
+          const excludeCondition = !dj.genres.some(genre => excludedGenres.includes(genre));
+            
+          // DJ must satisfy both conditions
+          return includeCondition && excludeCondition;
+        })
       );
     }
-  }, [selectedGenres, djs]);
+  }, [genreFilters, djs]);
 
   // Update email content when template or selected DJs change
   useEffect(() => {
@@ -104,13 +122,24 @@ const EmailQuotePage: PageWithLayout = ({
     setSelectedTemplate(template);
   };
 
-  // Handle genre selection
-  const handleGenreChange = (genre: string, isChecked: boolean) => {
-    setSelectedGenres(prev =>
-      isChecked
-        ? [...prev, genre]
-        : prev.filter(g => g !== genre)
-    );
+  // Handle tri-state genre filter change
+  // Filter states: 0 = unfiltered, 1 = include, 2 = exclude
+  const handleGenreChange = (genre: string) => {
+    setGenreFilters(prev => {
+      const newFilters = new Map(prev);
+      const currentState = prev.get(genre) || 0;
+      
+      // Cycle through states: 0 -> 1 -> 2 -> 0
+      const nextState = (currentState + 1) % 3;
+      
+      if (nextState === 0) {
+        newFilters.delete(genre); // Remove filter entirely when unselected
+      } else {
+        newFilters.set(genre, nextState);
+      }
+      
+      return newFilters;
+    });
   };
 
   // Handle DJ selection
@@ -194,25 +223,45 @@ const EmailQuotePage: PageWithLayout = ({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <Label className="text-sm font-medium">Filter by genres</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Filter by genres</Label>
+                      {genreFilters.size > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setGenreFilters(new Map())}
+                          className="h-8 px-2 text-xs"
+                        >
+                          Reset filters
+                        </Button>
+                      )}
+                    </div>
                     <div className="mt-2 grid grid-cols-2 gap-2">
-                      {uniqueGenres.map(genre => (
-                        <div key={genre} className="flex items-center">
-                          <Checkbox
-                            id={`genre-${genre}`}
-                            checked={selectedGenres.includes(genre)}
-                            onCheckedChange={(checked) =>
-                              handleGenreChange(genre, checked === true)
-                            }
-                          />
-                          <label
-                            htmlFor={`genre-${genre}`}
-                            className="ml-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      {uniqueGenres.map(genre => {
+                        const filterState = genreFilters.get(genre) || 0;
+                        return (
+                          <div 
+                            key={genre} 
+                            className="flex items-center cursor-pointer hover:bg-gray-50 p-1 rounded-sm"
+                            onClick={() => handleGenreChange(genre)}
                           >
-                            {genre}
-                          </label>
-                        </div>
-                      ))}
+                            <div
+                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${filterState > 0 ? 'border-primary' : 'border-primary/50'}`}
+                              aria-label={`Toggle ${genre} filter`}
+                            >
+                              {filterState === 1 && <Check className="h-3 w-3 text-green-600" />}
+                              {filterState === 2 && <Minus className="h-3 w-3 text-red-600" />}
+                            </div>
+                            <span
+                              className={`ml-2 text-sm leading-none ${filterState === 1 ? 'font-semibold text-green-700' : filterState === 2 ? 'font-semibold text-red-700' : ''}`}
+                            >
+                              {genre}
+                              {filterState === 1 && <span className="ml-1">(Include)</span>}
+                              {filterState === 2 && <span className="ml-1">(Exclude)</span>}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

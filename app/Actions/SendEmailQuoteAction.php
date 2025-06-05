@@ -8,6 +8,7 @@ use App\Enums\BookingStatusEnum;
 use App\Mail\BookingQuote;
 use App\Models\BookingRequest;
 use App\Models\DJ;
+use App\Models\EmailTemplate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -21,6 +22,7 @@ final readonly class SendEmailQuoteAction
      * @param array{
      *     sender_email: string,
      *     cc_email: ?string,
+     *     email_template_id: int,
      *     subject: string,
      *     body: string,
      *     dj_ids: array<int>

@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             BookingDataSeeder::class,
+            EmailTemplateSeeder::class,
         ]);
     }
 }

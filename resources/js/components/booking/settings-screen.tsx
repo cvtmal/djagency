@@ -1,21 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Save } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Save, PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
+import { router, usePage } from '@inertiajs/react';
+
+interface EmailTemplate {
+  id: number;
+  name: string;
+  subject: string;
+  body: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export function SettingsScreen() {
   const { showToast } = useToast();
   
-  // Mock settings state
+  // Email templates state
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  // Template form state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentTemplate, setCurrentTemplate] = useState<EmailTemplate | null>(null);
+  const [templateForm, setTemplateForm] = useState({
+    name: '',
+    subject: '',
+    body: '',
+    is_default: false
+  });
+  
+  // Other settings state
   const [settings, setSettings] = useState({
-    emailTemplates: {
-      quoteSubject: 'Your DJ quote for {{event_date}}',
-      quoteBody: 'Dear {{client_name}},\n\nThank you for your inquiry about booking a DJ for your event on {{event_date}}.\n\nWe are pleased to offer you a quote for {{dj_name}} at {{venue}} for {{hours}} hours.\n\nPlease let us know if you would like to proceed with this booking.\n\nBest regards,\nThe DJ Agency Team',
-      confirmationSubject: 'Booking Confirmation - {{event_date}}',
-      confirmationBody: 'Dear {{client_name}},\n\nThis email confirms your booking of {{dj_name}} for your event on {{event_date}} at {{venue}}.\n\nIf you have any questions, please don\'t hesitate to contact us.\n\nBest regards,\nThe DJ Agency Team',
-    },
     bookingSettings: {
       quoteValidityDays: 7,
       defaultBookingDuration: 4,
@@ -28,9 +53,21 @@ export function SettingsScreen() {
       blocked: '#fee2e2', // red-100
     }
   });
+  
+  // Get email templates from Inertia props
+  const { props } = usePage();
+  const initialTemplates = props.emailTemplates as EmailTemplate[] | undefined;
+  
+  // Set initial templates from props
+  useEffect(() => {
+    if (initialTemplates) {
+      setEmailTemplates(initialTemplates);
+      setIsLoading(false);
+    }
+  }, [initialTemplates]);
 
   const handleInputChange = (
-    category: 'emailTemplates' | 'bookingSettings' | 'statusColors',
+    category: 'bookingSettings' | 'statusColors',
     field: string,
     value: string | number
   ) => {
@@ -42,10 +79,90 @@ export function SettingsScreen() {
       }
     }));
   };
+  
+  const handleTemplateFormChange = (field: string, value: any) => {
+    setTemplateForm((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const handleSaveSettings = () => {
-    // In a real app, this would save to backend
+    // In a real app, this would save to backend for the other settings
     showToast('Settings saved successfully', 'success');
+  };
+  
+  const openCreateTemplateDialog = () => {
+    setCurrentTemplate(null);
+    setTemplateForm({
+      name: '',
+      subject: '',
+      body: '',
+      is_default: false
+    });
+    setIsDialogOpen(true);
+  };
+  
+  const openEditTemplateDialog = (template: EmailTemplate) => {
+    setCurrentTemplate(template);
+    setTemplateForm({
+      name: template.name,
+      subject: template.subject,
+      body: template.body,
+      is_default: template.is_default
+    });
+    setIsDialogOpen(true);
+  };
+  
+  const handleSaveTemplate = () => {
+    try {
+      if (currentTemplate) {
+        // Update existing template
+        router.put(`/booking/email-templates/${currentTemplate.id}`, templateForm, {
+          onSuccess: () => {
+            showToast('Template updated successfully');
+            setIsDialogOpen(false);
+            resetForm();
+          },
+          onError: () => showToast('Failed to save template', 'error')
+        });
+      } else {
+        // Create new template
+        router.post('/booking/email-templates', templateForm, {
+          onSuccess: () => {
+            showToast('Template created successfully');
+            setIsDialogOpen(false);
+            resetForm();
+          },
+          onError: () => showToast('Failed to save template', 'error')
+        });
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
+      showToast('Failed to save template', 'error');
+    }
+  };
+  
+  const handleDeleteTemplate = (templateId: number) => {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    
+    router.delete(`/booking/email-templates/${templateId}`, {
+      onSuccess: () => {
+        showToast('Template deleted successfully');
+      },
+      onError: () => {
+        showToast('Failed to delete template', 'error');
+      }
+    });
+  };
+
+  const resetForm = () => {
+    setTemplateForm({
+      name: '',
+      subject: '',
+      body: '',
+      is_default: false
+    });
   };
 
   return (
@@ -60,60 +177,121 @@ export function SettingsScreen() {
 
       {/* Email Templates */}
       <Card>
-        <CardHeader>
-          <CardTitle>Email Templates</CardTitle>
-          <CardDescription>
-            Configure templates for automated emails. Use double curly braces for dynamic content placeholders.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Email Templates</CardTitle>
+            <CardDescription>
+              Configure templates for automated emails. Use braces for dynamic content placeholders like {'{client_name}'}
+            </CardDescription>
+          </div>
+          <Button onClick={openCreateTemplateDialog}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Template
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Quote Email</h3>
-            <div className="space-y-2">
-              <label className="text-sm">Subject</label>
-              <input
-                type="text"
-                value={settings.emailTemplates.quoteSubject}
-                onChange={(e) => handleInputChange('emailTemplates', 'quoteSubject', e.target.value)}
-                className="w-full px-3 py-2 border rounded-md text-sm"
-              />
+        <CardContent>
+          {isLoading ? (
+            <div className="py-4 text-center">Loading templates...</div>
+          ) : emailTemplates.length === 0 ? (
+            <div className="py-4 text-center text-gray-500">
+              No email templates found. Click "Add Template" to create one.
             </div>
-            <div className="space-y-2">
-              <label className="text-sm">Body</label>
-              <textarea
-                value={settings.emailTemplates.quoteBody}
-                onChange={(e) => handleInputChange('emailTemplates', 'quoteBody', e.target.value)}
-                className="w-full px-3 py-2 border rounded-md text-sm"
-                rows={5}
-              />
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {emailTemplates.map((template) => (
+                <div key={template.id} className="border rounded-lg p-4 relative">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium text-lg">{template.name}</h3>
+                    <div className="flex items-center space-x-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEditTemplateDialog(template)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDeleteTemplate(template.id)}>
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {template.is_default && (
+                    <div className="bg-green-100 text-green-800 text-xs font-medium px-2 py-1 rounded-full inline-block mb-2">
+                      Default Template
+                    </div>
+                  )}
+                  
+                  <div className="mt-2">
+                    <p className="text-sm font-medium">Subject:</p>
+                    <p className="text-sm text-gray-600">{template.subject}</p>
+                  </div>
+                  
+                  <div className="mt-2">
+                    <p className="text-sm font-medium">Body preview:</p>
+                    <p className="text-sm text-gray-600 whitespace-pre-wrap line-clamp-3">{template.body}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Booking Confirmation Email</h3>
-            <div className="space-y-2">
-              <label className="text-sm">Subject</label>
-              <input
-                type="text"
-                value={settings.emailTemplates.confirmationSubject}
-                onChange={(e) => handleInputChange('emailTemplates', 'confirmationSubject', e.target.value)}
-                className="w-full px-3 py-2 border rounded-md text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm">Body</label>
-              <textarea
-                value={settings.emailTemplates.confirmationBody}
-                onChange={(e) => handleInputChange('emailTemplates', 'confirmationBody', e.target.value)}
-                className="w-full px-3 py-2 border rounded-md text-sm"
-                rows={5}
-              />
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
+      
+      {/* Email Template Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>{currentTemplate ? 'Edit Template' : 'Create New Template'}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="templateName">Name</Label>
+              <Input 
+                id="templateName" 
+                value={templateForm.name} 
+                onChange={(e) => handleTemplateFormChange('name', e.target.value)} 
+                placeholder="Template name"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="templateSubject">Subject</Label>
+              <Input 
+                id="templateSubject" 
+                value={templateForm.subject} 
+                onChange={(e) => handleTemplateFormChange('subject', e.target.value)} 
+                placeholder="Email subject"
+              />
+            </div>
+            
+            <div className="grid gap-2">
+              <Label htmlFor="templateBody">Body</Label>
+              <Textarea 
+                id="templateBody" 
+                value={templateForm.body} 
+                onChange={(e) => handleTemplateFormChange('body', e.target.value)} 
+                rows={10}
+                placeholder="Email body content"
+              />
+              <p className="text-xs text-gray-500">
+                Available placeholders: {'{client_name}'}, {'{event_date}'}, {'{event_type}'}, {'{dj_list}'}, {'{venue}'}, {'{sender_name}'}
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="isDefault" 
+                checked={templateForm.is_default} 
+                onCheckedChange={(checked) => handleTemplateFormChange('is_default', checked)}
+              />
+              <Label htmlFor="isDefault">Set as default template</Label>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveTemplate}>Save Template</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Booking Settings */}
       <Card>
